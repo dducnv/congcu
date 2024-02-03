@@ -76,10 +76,12 @@ export const TextareaQuicknote = () => {
   function importFile() {
     const input = document.createElement("input");
     input.type = "file";
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     input.onchange = function (e: any) {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.readAsText(file, "UTF-8");
+      /* eslint-disable  @typescript-eslint/no-explicit-any */
       reader.onload = function (readerEvent: any) {
         const content = readerEvent.target.result;
         const newTab = {
