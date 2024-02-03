@@ -12,8 +12,8 @@ type TextareaQuicknoteItem = {
 };
 
 export const TextareaQuicknote = () => {
-  const [deleteTabIndex, setDeleteTabIndex] = useState<any>();
-  const [selectedTab, setSelectedTab] = useState<TextareaQuicknoteItem>({
+  const [deleteTabIndex, setDeleteTabIndex] = useState<number | null>(null);
+  const [selectedTab, setSelectedTab] = useState<TextareaQuicknoteItem | null>({
     date: "",
     notes: "",
     file_name: "",
@@ -51,6 +51,11 @@ export const TextareaQuicknote = () => {
   }, []);
 
   function downloadFile(filename: string, text: string) {
+    if (text === "") {
+      alert("Không thể tải file rỗng");
+      return;
+    }
+
     const filName = prompt("Nhập tên file", filename.replace(".txt", ""));
     if (filName === null) {
       return;
@@ -130,7 +135,7 @@ export const TextareaQuicknote = () => {
     setDeleteTabIndex(getIndexOfTab);
     const newTabList = textNotesList.filter((item) => item.id !== tab.id);
 
-    if (selectedTab.id !== tab.id) {
+    if (selectedTab && selectedTab.id !== tab.id) {
       setDeleteTabIndex(-1);
     }
 
@@ -141,7 +146,7 @@ export const TextareaQuicknote = () => {
   useEffect(() => {
     if (textNotesList.length > 0) {
       if (selectedTab === null || !textNotesList.includes(selectedTab)) {
-        if (deleteTabIndex !== -1) {
+        if (deleteTabIndex !== -1 && deleteTabIndex !== null) {
           setSelectedTab(textNotesList[deleteTabIndex - 1]);
         }else {
           setSelectedTab(textNotesList[0]);
@@ -156,7 +161,7 @@ export const TextareaQuicknote = () => {
 
   function editTextNotes(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const newTabList = textNotesList.map((item) => {
-      if (item.id === selectedTab.id) {
+      if (item.id === selectedTab?.id) {
         return {
           ...item,
           notes: e.target.value,
@@ -167,7 +172,7 @@ export const TextareaQuicknote = () => {
 
     setTextNotesList(newTabList);
     setSelectedTab(
-      newTabList.find((item) => item.id === selectedTab.id) as any
+      newTabList.find((item) => item.id === selectedTab?.id) as TextareaQuicknoteItem
     );
     localStorage.setItem("textNotesList", JSON.stringify(newTabList));
   }
@@ -177,7 +182,7 @@ export const TextareaQuicknote = () => {
        <div className="flex space-x-3 mb-3">
           <a
             onClick={() =>
-              downloadFile(selectedTab.file_name, selectedTab.notes)
+              downloadFile(selectedTab?.file_name ?? "file name", selectedTab?.notes ?? "")
             }
             className="hover:underline hover:cursor-pointer"
           >
@@ -198,7 +203,7 @@ export const TextareaQuicknote = () => {
               className={`
                                 max-w-32 min-w-32
                                 flex space-x-2 justify-center items-center border hover:cursor-pointer  pl-2 pr-1 py-1 ${
-                                  item.id === selectedTab.id
+                                  item.id === selectedTab?.id
                                     ? "bg-gray-50 border-black"
                                     : "border-gray-300 text-gray-500"
                                 }`}
@@ -232,7 +237,7 @@ export const TextareaQuicknote = () => {
         className="w-full outline-none border min-h-250 border-black p-3 min-h-fit text-xl text-mono"
       />
       <div className="flex justify-between items-center">
-        <span>Thay đổi lần cuối lúc: {selectedTab.date}</span>
+        <span>Thay đổi lần cuối lúc: {selectedTab?.date}</span>
         <span>{selectedTab?.notes?.length}</span>
       </div>
     </>
