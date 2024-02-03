@@ -8,10 +8,18 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      boxShadow: {
+        "blog-l": "-8px 8px 0 #10162F",
+        "blog-d": "-8px 8px 0 #e7f6fe",
+        "social-l": "-4px 4px 0 #10162F",
+        "social-d": "-4px 4px 0 #e7f6fe",
+      },
+      spacing: {
+        "blog-4m": "-4px",
+        "blog-4P": "4px",
+      },
+      colors: {
+        primary: "#FFF0E5",
       },
     },
   },
