@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from "react";
 import rgbHex from "rgb-hex";
 import hexRgb from "hex-rgb";
+import { imageColorPickerExBase64 } from "@/core/constant";
+
+const sampleImg = ``;
 interface CanvasConvertArgs {
   el: HTMLCanvasElement;
   image: HTMLImageElement;
@@ -73,9 +76,9 @@ function generateImage(args: GenerateImageArgs) {
   // select file
   bindUi();
 }
-const sampleImg =
-  "https://res.cloudinary.com/dduc7th-dec/image/upload/v1707067620/slqklbwghhjrgf6dy65k.jpg";
+
 export const ColorPickerFromImage = () => {
+  const [sampleImgBase64, setSampleImgBase64] = useState<string>("");
   const [hex, setHex] = useState<string>("#ffffff");
   const [colors, setColors] = useState<string[]>([]);
   const [colorSelect, setColorSelect] = useState<string>("#ffffff");
@@ -114,15 +117,21 @@ export const ColorPickerFromImage = () => {
       image: thumb,
       callback: () => {
         const params: CanvasRenderingContext2D = canvas.getContext("2d")!;
-        const imageData: ImageData = params.getImageData(cords.x, cords.y, 1, 1);
+        const imageData: ImageData = params.getImageData(
+          cords.x,
+          cords.y,
+          1,
+          1
+        );
         const pixelData: Uint8ClampedArray = imageData.data;
-        
+
         // Get color
-        const bg: string = "#" + rgbHex(pixelData[0], pixelData[1], pixelData[2]);
-        
+        const bg: string =
+          "#" + rgbHex(pixelData[0], pixelData[1], pixelData[2]);
+
         // Set color
         setHex(bg);
-        
+
         // If click, push new color
         if (bol) {
           setColors((colors) =>
@@ -130,7 +139,7 @@ export const ColorPickerFromImage = () => {
           );
           setColorSelect(bg);
         }
-        
+
         // Add background to body
         if (element) {
           element.style.background = bg;
@@ -167,7 +176,9 @@ export const ColorPickerFromImage = () => {
             <input type="file" id="image-input" />
           </div>
           <img
-            src={sampleImg}
+            src={
+                imageColorPickerExBase64
+            }
             className="w-full h-auto object-contain cursor-crosshair"
             id="image-display"
             alt=""
