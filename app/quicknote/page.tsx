@@ -1,8 +1,7 @@
-import { Container, TitlePage } from "@/components";
-import { TextareaQuicknote } from "@/components/page_components/textarea_quicknote";
+import { Container, TextareaQuicknote, TitlePage } from "@/components";
 import React from "react";
 
-//seo 
+//seo
 
 export const metadata = {
   title: "Ghi chú nhanh",
