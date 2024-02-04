@@ -73,32 +73,40 @@ export const TextareaQuicknote = () => {
     document.body.removeChild(element);
   }
 
-  function importFile() {
-    const input = document.createElement("input");
+  function importFile(): void {
+    const input: HTMLInputElement = document.createElement("input");
     input.type = "file";
-    input.onchange = function (e: any) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.readAsText(file, "UTF-8");
-      reader.onload = function (readerEvent: any) {
-        const content = readerEvent.target.result;
-        const newTab = {
-          date: dateTimeNow,
-          notes: content,
-          file_name: file.name.replace(".txt", "").trim(),
-          id: uid(),
-        };
+    input.onchange = function (e: Event): void {
+        const fileInput = e.target as HTMLInputElement;
+        const file: File | null = fileInput.files?.[0] || null;
 
-        setSelectedTab(newTab);
-        setTextNotesList([...textNotesList, newTab]);
-        localStorage.setItem(
-          "textNotesList",
-          JSON.stringify([...textNotesList, newTab])
-        );
-      };
+        if (file) {
+            const reader: FileReader = new FileReader();
+            reader.readAsText(file, "UTF-8");
+            reader.onload = function (readerEvent: ProgressEvent<FileReader>): void {
+                const content: string | ArrayBuffer | null = readerEvent.target?.result || null;
+
+                if (content) {
+                    const newTab: TextareaQuicknoteItem = {
+                        date: dateTimeNow,
+                        notes: content.toString(),
+                        file_name: file.name.replace(".txt", "").trim(),
+                        id: uid(),
+                    };
+
+                    setSelectedTab(newTab);
+                    setTextNotesList([...textNotesList, newTab]);
+                    localStorage.setItem(
+                        "textNotesList",
+                        JSON.stringify([...textNotesList, newTab])
+                    );
+                }
+            };
+        }
     };
     input.click();
-  }
+}
+
 
   function addTabNotes() {
     const newTab = {
