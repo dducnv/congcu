@@ -113,24 +113,27 @@ export const ColorPickerFromImage = () => {
       el: canvas,
       image: thumb,
       callback: () => {
-        let params = canvas.getContext("2d");
-
-        const imgData = params!.getImageData(cords.x, cords.y, 1, 1).data;
-
-        let rgb = `rgb(${imgData[0]}, ${imgData[1]}, ${imgData[2]})`;
-
-        let hex = rgbHex(imgData[0], imgData[1], imgData[2]);
-
-        setHex(`#${hex}`);
-
+        const params: CanvasRenderingContext2D = canvas.getContext("2d")!;
+        const imageData: ImageData = params.getImageData(cords.x, cords.y, 1, 1);
+        const pixelData: Uint8ClampedArray = imageData.data;
+        
+        // Get color
+        const bg: string = "#" + rgbHex(pixelData[0], pixelData[1], pixelData[2]);
+        
+        // Set color
+        setHex(bg);
+        
+        // If click, push new color
         if (bol) {
           setColors((colors) =>
-            !colors.includes(`#${hex}`) ? [...colors, `#${hex}`] : [...colors]
+            !colors.includes(bg) ? [...colors, bg] : [...colors]
           );
-          setColorSelect(`#${hex}`);
+          setColorSelect(bg);
         }
+        
+        // Add background to body
         if (element) {
-          element.style.background = `#${hex}`;
+          element.style.background = bg;
         }
       },
     });
