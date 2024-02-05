@@ -2,10 +2,6 @@ import { NextApiRequest } from "next/types";
 
 export async function POST(request: NextApiRequest) {
   const body = await request.body;
-  return removeBg(request, body);
-}
-
-export async function removeBg(request: NextApiRequest, body: any) {
   try {
     const { file } = body;
     const url = `https://api.remove.bg/v1.0/removebg`;
