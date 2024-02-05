@@ -1,17 +1,11 @@
-import { encryptData } from "@/core/utils";
+import { NextApiRequest } from "next/types";
 
-export async function POST(request: Request) {
-  const { url } = request;
-  const { pathname } = new URL(url);
-  const path = pathname.split("/").filter((i) => i);
-  const body = await request.json();
-  if (path[1] === "remove-bg") {
-    return removeBg(request, body);
-  }
-  return new Response("Not found", { status: 404 });
+export async function POST(request: NextApiRequest) {
+  const body = await request.body;
+  return removeBg(request, body);
 }
 
-export async function removeBg(request: Request, body: any) {
+export async function removeBg(request: NextApiRequest, body: any) {
   try {
     const { file } = body;
     const url = `https://api.remove.bg/v1.0/removebg`;
