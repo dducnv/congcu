@@ -58,6 +58,12 @@ const congCuItems: SidebarItem[] = [
     icon: "",
     desc: "Chức năng như tên.",
   },
+  {
+    name: "Chỉnh sửa ảnh",
+    href: "/quick-image-editor",
+    icon: "",
+    desc: "Cung cấp các công cụ chỉnh sửa ảnh nhanh.",
+  }
 ];
 
 const congCu: SidebarModel = {

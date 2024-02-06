@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import { Siderbar } from "@/components";
 
+import "./globals.css";
+
+// import "tui-image-editor/dist/tui-image-editor.css";
 
 export const metadata: Metadata = {
   title: "Công cụ nhanh",
@@ -15,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="max-h-screen h-screen overflow-hidden">
         <div className="flex">
           <Siderbar />
           <div className="bg-primary lg:border-l border-black w-full">
