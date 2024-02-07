@@ -5,7 +5,7 @@ const page = () => {
   return (
     <div className=" min-h-screen">
     <TitlePage>
-      Đang phát triển
+      Xóa nền ảnh
     </TitlePage>
     <RmBg/>
   </div>
