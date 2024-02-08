@@ -169,44 +169,46 @@ export const ImageEditor = () => {
         onChange={onSelectFile}
         className="w-full"
       />
-      <hr className="my-2" />
-      {}
+
       {imgSrc && (
-        <div className="flex space-x-4  items-center mb-2">
-          <button
-            onClick={handleToggleAspectClick}
-            className=" hover:underline"
-          >
-            {aspect ? "Tắt" : "Bật"} chỉnh lề
-          </button>
+        <div>
+          <hr className="my-2" />
+          <div className="flex space-x-4  items-center mb-2">
+            <button
+              onClick={handleToggleAspectClick}
+              className=" hover:underline"
+            >
+              {aspect ? "Tắt" : "Bật"} chỉnh lề
+            </button>
 
-          <div className="flex items-center space-x-2">
-            <label htmlFor="scale">Tỉ lệ:</label>
-            <input
-              type="range"
-              min="1"
-              max="3"
-              step="0.1"
-              value={scale}
-              onChange={(e) => setScale(parseFloat(e.target.value))}
-            />
+            <div className="flex items-center space-x-2">
+              <label htmlFor="scale">Tỉ lệ:</label>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.1"
+                value={scale}
+                onChange={(e) => setScale(parseFloat(e.target.value))}
+              />
+            </div>
+
+            <div className="flex items-center  space-x-2">
+              <label htmlFor="rotate">Xoay:</label>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value={rotate}
+                onChange={(e) => setRotate(parseFloat(e.target.value))}
+              />
+            </div>
+
+            <button onClick={reset} className="hover:underline text-red-500">
+              Khôi phục
+            </button>
           </div>
-
-          <div className="flex items-center  space-x-2">
-            <label htmlFor="rotate">Xoay:</label>
-            <input
-              type="range"
-              min="0"
-              max="360"
-              step="1"
-              value={rotate}
-              onChange={(e) => setRotate(parseFloat(e.target.value))}
-            />
-          </div>
-
-          <button onClick={reset} className="hover:underline text-red-500">
-            Khôi phục
-          </button>
         </div>
       )}
       <div className="flex w-full space-x-2">
