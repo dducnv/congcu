@@ -13,8 +13,9 @@ export const metadata = {
 const page = () => {
   return (
     <div className="max-h-screen overflow-hidden h-screen scroll-m-0">
+      <div className="h-20"></div>
       <TitlePage>Chỉnh ảnh nhanh</TitlePage>
-      <Container width="max-w-6xl" className="p-0 flex">
+      <Container width="max-w-6xl" className="p-3 flex">
         <ImageEditor/>
       </Container>
     </div>

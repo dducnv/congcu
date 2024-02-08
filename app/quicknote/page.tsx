@@ -11,8 +11,9 @@ export const metadata = {
 const page = () => {
   return (
     <>
+     <div className="h-20"></div>
       <TitlePage>Ghi chú nhanh</TitlePage>
-      <Container width="max-w-6xl">
+      <Container width="max-w-6xl" className="p-3">
         <TextareaQuicknote />
       </Container>
     </>

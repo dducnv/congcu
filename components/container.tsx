@@ -10,7 +10,7 @@ export const Container = ({
   className?: string;
 }) => {
   return (
-    <div className={` ${width} ${className} p-3 border border-black bg-white m-auto`}>
+    <div className={` ${width} ${className}  border border-black bg-white m-auto`}>
       {children}
     </div>
   );

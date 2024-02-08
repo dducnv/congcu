@@ -63,6 +63,12 @@ const congCuItems: SidebarItem[] = [
     href: "/quick-image-editor",
     icon: "",
     desc: "Cung cấp các công cụ chỉnh sửa ảnh nhanh.",
+  },
+  {
+    name:"Vẽ",
+    href:"/draw",
+    icon:"",
+    desc:"Vẽ trên màn hình."
   }
 ];
 

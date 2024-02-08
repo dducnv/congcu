@@ -1,21 +1,20 @@
-import { ColorPickerFromImage, TitlePage } from '@/components'
+import { ColorPickerFromImage, TitlePage } from "@/components";
 import rgbHex from "rgb-hex";
 import hexRgb from "hex-rgb";
-import React from 'react'
-
-
+import React from "react";
 
 const page = () => {
   return (
     <>
-    
-    <TitlePage>
-        Chọn màu từ ảnh
-    </TitlePage>
-    <ColorPickerFromImage/>
-    <canvas className="hidden" id="cs"></canvas>
-    </>
-  )
-}
+      <div className="h-20"></div>
 
-export default page
+      <TitlePage>Chọn màu từ ảnh</TitlePage>
+      <div className=" px-14">
+        <ColorPickerFromImage />
+      </div>
+      <canvas className="hidden" id="cs"></canvas>
+    </>
+  );
+};
+
+export default page;

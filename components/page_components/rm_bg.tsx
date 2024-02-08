@@ -53,7 +53,7 @@ export const RmBg = () => {
   }
   return (
     <>
-      <Container width="max-w-2xl">
+      <Container width="max-w-2xl" className="p-3">
         <div className=" text-center">
           <span className="text-lg text-center text-orange-500">
             Sử dụng tối đa 3 lần mỗi 3h

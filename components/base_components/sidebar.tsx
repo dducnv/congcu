@@ -9,10 +9,10 @@ export const Siderbar = () => {
   const pathName = usePathname();
 
   return (
-    <aside className="hidden flex-col w-72  lg:flex  px-4 py-8 min-h-screen bg-white ">
+    <aside className="hidden flex-col w-72  lg:flex  px-4  min-h-screen bg-white ">
       <Link
         href={"/"}
-        className="text-3xl textMono font-semibold text-gray-800"
+        className="text-3xl textMono font-semibold text-gray-800 mt-2"
       >
         <h1>7TH.DEC</h1>
       </Link>
@@ -54,7 +54,7 @@ export const Siderbar = () => {
                   <h2>{itemlink.name}</h2>
                 </Link>
               ))}
-              <hr className="my-6 border-gray-200 " />
+              <hr className="my-3 border-gray-200 " />
             </div>
           ))}
           <div>
