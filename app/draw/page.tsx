@@ -1,7 +1,14 @@
 import React from "react";
-import { Container, DrawComponent } from "@/components";
+
+
+import dynamic from "next/dynamic";
+
+const DrawComponent = dynamic(async () => import("@/components/page_components/draw_component"), {
+  ssr: false,
+});
 
 const page = () => {
+
   return (
    <div>
      <div  className=" max-h-screen h-screen relative pl-1 overflow-hidden bg-white"> 
