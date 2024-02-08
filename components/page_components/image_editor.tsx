@@ -178,7 +178,7 @@ export const ImageEditor = () => {
               onClick={handleToggleAspectClick}
               className=" hover:underline"
             >
-              {aspect ? "Tắt" : "Bật"} chỉnh lề
+              {aspect ? "Bật " : "Tắt"} chỉnh lề
             </button>
 
             <div className="flex items-center space-x-2">
