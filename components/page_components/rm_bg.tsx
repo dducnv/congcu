@@ -4,11 +4,14 @@
 import { ChangeEvent, useState } from "react";
 import { Container } from "../container";
 import { classNames } from "@/core/utils";
+import { ArrowDownCircleIcon } from "@heroicons/react/20/solid";
 
 export const RmBg = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [image, setImage] = useState("");
   const [result, setResult] = useState("");
+
+
 
   function handleChooseImage(e: ChangeEvent<HTMLInputElement>) {
     setResult("");
@@ -26,44 +29,46 @@ export const RmBg = () => {
 
   function handleRemoveBg() {
     setIsLoading(true);
-
+    function status(res:any) {
+      if (!res.ok) {
+          return Promise.reject()
+      }
+      return res;
+  }
     fetch("/api/remove-bg", {
       method: "POST",
       body: JSON.stringify({ file: image }),
-    }).then(async (res) => {
+    })
+    
+    .then(async (res) => {
       setIsLoading(false);
-      var blobRes = await res.blob();
-      setResult(URL.createObjectURL(blobRes));
+      if(res.status === 200) {
+        const blob = await res.blob();
+        setResult(URL.createObjectURL(blob));
+      }
+
+      if(res.status === 429) {
+        alert("Bạn đã hết lượt sử dụng, hãy chờ 3h");
+      }
+      
     });
   }
   return (
     <>
       <Container width="max-w-2xl">
-        <div className="flex flex-col items-center justify-center">
+        <div className=" text-center">
+          <span
+          className="text-lg text-center text-orange-500"
+          >
+            Sử dụng tối đa 3 lần mỗi 3h
+          </span>
           <input
             type="file"
             accept="image/*"
             onChange={handleChooseImage}
             className="w-full"
           />
-          {image && (
-            <img
-              src={image}
-              alt="preview"
-              className="w-full h-auto mt-4 "
-            />
-          )}
-
-          {result && (
-            <img
-              src={result}
-              alt="result"
-              
-              className="w-full h-auto mt-4 bg-[url('/pngkey.com-checkered-pattern-png-8506557.png')]"
-            />
-          )}
-        </div>
-        {image && (
+         {image && (
           <div className="flex justify-center mt-2 space-x-2">
             <button
               disabled={isLoading}
@@ -90,6 +95,42 @@ export const RmBg = () => {
             )}
           </div>
         )}
+
+        {
+          (image || result) && (
+            <hr className="my-4" />
+          )
+        }
+
+        {
+          result && (
+            <div className="text-center">
+            <span className="text-lg text-center">
+              Kéo xuống để xem kết quả
+            </span>
+
+            <ArrowDownCircleIcon className="w-8 h-8 mx-auto text-indigo-500 animate-bounce" />
+            </div>
+          )
+        }
+          {image && (
+            <img
+              src={image}
+              alt="preview"
+              className="w-full h-auto mt-4 "
+            />
+          )}
+
+          {result && (
+            <img
+              src={result}
+              alt="result"
+              
+              className="w-full h-auto mt-4 bg-[url('/pngkey.com-checkered-pattern-png-8506557.png')]"
+            />
+          )}
+        </div>
+   
       </Container>
     </>
   );

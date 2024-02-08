@@ -51,6 +51,9 @@ export const ImageEditor = () => {
   const [scale, setScale] = useState(1);
   const [rotate, setRotate] = useState(0);
   const [aspect, setAspect] = useState<number | undefined>(16 / 9);
+
+ 
+
   function onSelectFile(e: ChangeEvent<HTMLInputElement>): void {
     if (e.target.files && e.target.files.length > 0) {
       setCrop(undefined);
@@ -172,7 +175,7 @@ export const ImageEditor = () => {
 
       {imgSrc && (
         <div>
-          <hr className="my-2" />
+          <hr className="my-2 w-full" />
           <div className="flex space-x-4  items-center mb-2">
             <button
               onClick={handleToggleAspectClick}
@@ -208,16 +211,23 @@ export const ImageEditor = () => {
             <button onClick={reset} className="hover:underline text-red-500">
               Khôi phục
             </button>
+
+         
           </div>
         </div>
       )}
       <div className="flex w-full space-x-2">
         <div className="w-1/2">
           {!!imgSrc && (
+            <div
+      
+            >
+
             <ReactCrop
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
+              
               aspect={aspect}
             >
               <img
@@ -228,13 +238,15 @@ export const ImageEditor = () => {
                 className="w-full h-auto"
               />
             </ReactCrop>
+              </div>
           )}
         </div>
         <div className="w-1/2 relative">
           {!!completedCrop && (
             <>
-              <div>
+              <div className=" mb-14">
                 <canvas
+                className=" bg-[url('/pngkey.com-checkered-pattern-png-8506557.png')]"
                   ref={previewCanvasRef}
                   style={{
                     border: "1px solid black",

@@ -129,7 +129,6 @@ export const TextareaQuicknote = () => {
   }
 
   function selectTabNotes(tab: TextareaQuicknoteItem) {
-    console.log(tab);
     setSelectedTab(tab);
   }
 
