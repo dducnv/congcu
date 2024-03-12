@@ -11,7 +11,7 @@
   "dependencies": {
     "@heroicons/react": "^2.1.1",
     "@lexical/react": "^0.13.1",
-    "@tldraw/tldraw": "^1.29.2",
+    "@tldraw/tldraw": "^2.0.1",
     "@upstash/ratelimit": "^1.0.1",
     "@upstash/redis": "^1.28.3",
     "crypto-js": "^4.2.0",

@@ -3,6 +3,7 @@ import { Siderbar } from "@/components";
 
 import "./globals.css";
 import 'react-image-crop/dist/ReactCrop.css';
+import 'tldraw/tldraw.css';
 
 export const metadata: Metadata = {
   title: "Công cụ nhanh",

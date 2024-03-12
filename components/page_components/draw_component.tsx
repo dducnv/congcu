@@ -1,22 +1,9 @@
-
 "use client";
-import React from 'react'
-import { TDExport, Tldraw, TldrawApp, useFileSystem } from "@tldraw/tldraw";
+import React from "react";
+import { Tldraw } from "@tldraw/tldraw";
 
+const DrawComponent = () => {
+  return <Tldraw persistenceKey="tldraw" />;
+};
 
- const DrawComponent = () => {
-    const fileSystemEvents = useFileSystem();
-  return (
-    <Tldraw
-    autofocus
-
-    showPages={false}
-    showMultiplayerMenu={false}
-    darkMode={false}
-    {...fileSystemEvents}
-
-    />
-  )
-}
-
-export default DrawComponent
+export default DrawComponent;
