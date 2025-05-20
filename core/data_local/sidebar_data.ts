@@ -47,6 +47,12 @@ const congCuItems: SidebarItem[] = [
     desc: "Công cụ tính % nhanh (có công thức).",
   },
   {
+    name: "Chuyển đổi file",
+    href: "/file-converter",
+    icon: "",
+    desc: "Chuyển đổi file từ định dạng này sang định dạng khác.",
+  },
+  {
     name: "Chọn màu từ ảnh",
     href: "/color-picker-from-image",
     icon: "",
