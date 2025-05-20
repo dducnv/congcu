@@ -323,7 +323,7 @@ export const TextareaQuicknote = () => {
         </div>
       </div>
       <div className="flex items-center mb-3 space-x-2">
-        <div className="flex items-center space-x-3  overflow-auto tab-scroll">
+        <div className="flex items-center space-x-3 overflow-x-auto w-full tab-scroll">
           {textNotesList.map((item) => (
             <div
               key={item.id}

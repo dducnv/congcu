@@ -12,7 +12,7 @@ export const Siderbar = () => {
     <aside className="hidden flex-col w-72  lg:flex  px-4  min-h-screen bg-white ">
       <Link
         href={"/"}
-        className="text-3xl textMono font-semibold text-gray-800 mt-2"
+        className="text-3xl text-mono font-semibold text-gray-800 mt-2"
       >
         <h1>7TH.DEC</h1>
       </Link>

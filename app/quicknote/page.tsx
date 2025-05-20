@@ -16,6 +16,7 @@ const page = () => {
       <Container width="max-w-6xl" className="p-3">
         <TextareaQuicknote />
       </Container>
+      <div className="h-20"></div>
     </>
   );
 };

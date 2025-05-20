@@ -14,10 +14,27 @@ body {
 }
 
 
-.tab-scroll::-webkit-scrollbar {
-    display: none;
-   
+.tab-scroll {
+  scrollbar-width: thin;              /* Firefox */
+  scrollbar-color: #cbd5e1 #f1f5f9;   /* Firefox */
 }
+
+.tab-scroll::-webkit-scrollbar {
+  height: 6px;                        /* Chiều cao thanh ngang */
+  background: #f1f5f9;                /* Màu nền thanh scroll */
+  border-radius: 8px;
+}
+
+.tab-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;                /* Màu thanh kéo */
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.tab-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;                /* Màu khi hover */
+}
+
 #TD-PrimaryTools{
     border: 1px solid black !important;
     border-radius: 0px !important;

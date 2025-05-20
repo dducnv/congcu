@@ -17,7 +17,7 @@ export default function Home() {
         <div className="flex justify-center mt-20 lg:pt-6">
           <input
             onChange={(value) => handleSearch(value.target.value)}
-            className="border textMono border-black w-full py-5 text-3xl px-6 max-w-4xl m-auto outline-none rounded-full shadow-blog-l"
+            className="border text-mono border-black w-full py-5 text-3xl px-6 max-w-4xl m-auto outline-none rounded-full shadow-blog-l"
             placeholder="Nhập từ khóa để tìm kiếm công cụ..."
           />
         </div>
@@ -31,7 +31,7 @@ export default function Home() {
               <>
                 {filterItems.length > 0 && (
                   <>
-                    <h1 className="px-3 mt-10 border-l-4 border-black text-3xl textMono font-bold">
+                    <h1 className="px-3 mt-10 border-l-4 border-black text-3xl text-mono font-bold">
                       {item.title}
                     </h1>
                     <div className=" grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-6 gap-8">
@@ -39,7 +39,7 @@ export default function Home() {
                         <Link
                           href={itemInItem.href}
                           key={index}
-                          className="w-full textMono p-4 h-44 border border-black bg-white hover:shadow-blog-l hover:translate-y-blog-4m hover:translate-x-blog-4p  ease-in duration-200"
+                          className="w-full text-mono p-4 h-44 border border-black bg-white hover:shadow-blog-l hover:translate-y-blog-4m hover:translate-x-blog-4p  ease-in duration-200"
                         >
                           <span className="text-lg bg-black text-white ">
                             {itemInItem.name}
