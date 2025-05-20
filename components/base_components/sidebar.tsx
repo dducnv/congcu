@@ -60,7 +60,7 @@ export const Siderbar = () => {
           <div>
             <h4>
               Made by{" "}
-              <a href="https://dducnv.dev" className="underline">
+              <a href="https://dducnv.github.io" className="underline">
                 Nguyen Van Duc
               </a>{" "}
               with all my heart ❤️
