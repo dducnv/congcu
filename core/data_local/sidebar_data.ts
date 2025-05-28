@@ -59,12 +59,6 @@ const congCuItems: SidebarItem[] = [
     desc: "Chức năng như tên.",
   },
   {
-    name: "Xóa nền",
-    href: "/remove-bg",
-    icon: "",
-    desc: "Chức năng như tên.",
-  },
-  {
     name: "Chỉnh sửa ảnh",
     href: "/quick-image-editor",
     icon: "",
