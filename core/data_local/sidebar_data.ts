@@ -24,6 +24,12 @@ const chuyenDoiItems: SidebarItem[] = [
     icon: "",
     desc: "Trích xuất văn bản từ các hình ảnh như JPG, PNG.",
   },
+  {
+    name: "Chuyển đổi file",
+    href: "/file-converter",
+    icon: "",
+    desc: "Chuyển đổi file từ định dạng này sang định dạng khác.",
+  },
 ];
 const chuyenDoi: SidebarModel = {
   title: "🚀 Chuyển Đổi",
@@ -47,12 +53,6 @@ const congCuItems: SidebarItem[] = [
     desc: "Công cụ tính % nhanh (có công thức).",
   },
   {
-    name: "Chuyển đổi file",
-    href: "/file-converter",
-    icon: "",
-    desc: "Chuyển đổi file từ định dạng này sang định dạng khác.",
-  },
-  {
     name: "Chọn màu từ ảnh",
     href: "/color-picker-from-image",
     icon: "",
@@ -65,10 +65,10 @@ const congCuItems: SidebarItem[] = [
     desc: "Cung cấp các công cụ chỉnh sửa ảnh nhanh.",
   },
   {
-    name:"Vẽ",
-    href:"/draw",
-    icon:"",
-    desc:"Vẽ trên màn hình."
+    name: "Vẽ",
+    href: "/draw",
+    icon: "",
+    desc: "Vẽ trên màn hình."
   }
 ];
 
