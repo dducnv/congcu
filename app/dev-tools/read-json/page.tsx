@@ -31,7 +31,9 @@ const CodeEditorWrapper = ({
         fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, monospace',
         backgroundColor: readOnly ? '#f9fafb' : '#ffffff',
         border: '1px solid black',
-        minHeight: `${rows * 1.5}rem`,
+        minHeight: `100px`,
+        maxHeight: `500px`,
+        overflowY: 'auto',
       }}
       padding={12}
     />
