@@ -75,7 +75,7 @@ const GenerateSecretKeyPage = () => {
   }
 
   return (
-    <div className='max-w-xl mx-auto p-6'>
+    <div className='max-w-xl mx-auto p-6 text-mono'>
       <h1 className='text-2xl font-bold mb-4'>Tạo khoá bảo mật</h1>
       <div className='mb-4'>
         <label className='block mb-1 font-semibold'>Chọn loại khoá</label>

@@ -1375,7 +1375,7 @@ ${constructorParams}
                 rows={8}
               />
             )}
-          </div>
+  </div>
         );
 
       default:
@@ -1384,7 +1384,7 @@ ${constructorParams}
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 text-mono">
       <h1 className="text-2xl font-bold mb-4">JSON Multi-Tool</h1>
 
       {/* Tab Navigation */}

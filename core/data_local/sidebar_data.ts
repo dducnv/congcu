@@ -13,12 +13,6 @@ type SidebarItem = {
 // chuyển đổi
 const chuyenDoiItems: SidebarItem[] = [
   {
-    name: "Chuyển đổi tiền tệ",
-    href: "/currency-exchange",
-    icon: "",
-    desc: "Chức năng như tên.",
-  },
-  {
     name: "Trích xuất văn bản từ hình ảnh",
     href: "/image-to-text",
     icon: "",
@@ -98,6 +92,12 @@ const developerToolsItems: SidebarItem[] = [
     icon: "",
     desc: "",
   },
+  {
+    name: "Color Converter",
+    href: "/dev-tools/color-converter",
+    icon: "",
+    desc: "Chuyển đổi màu HEX ↔ RGB ↔ HSL với color picker",
+  },
 ];
 
 const developerTools: SidebarModel = {
@@ -113,11 +113,5 @@ export const navData: SidebarItem[] = [
     href: "/",
     icon: "",
     desc: "Trang chủ",
-  },
-  {
-    name: "Giới thiệu",
-    href: "/about",
-    icon: "",
-    desc: "Về chúng tôi",
-  },
+  }
 ];
