@@ -45,6 +45,12 @@ const congCuItems: SidebarItem[] = [
     icon: "",
     desc: "Ghi chú.",
   },
+  {
+    name: "Emoji",
+    href: "/emoji",
+    icon: "",
+    desc: "Tổng hợp emoji.",
+  },
 
   {
     name: "Tính tỉ lệ %",
@@ -83,6 +89,12 @@ const developerToolsItems: SidebarItem[] = [
   {
     name: "Read Json",
     href: "/dev-tools/read-json",
+    icon: "",
+    desc: "",
+  },
+  {
+    name: "Generate secret key",
+    href: "/dev-tools/generate-secret-key",
     icon: "",
     desc: "",
   },

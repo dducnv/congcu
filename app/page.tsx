@@ -21,7 +21,7 @@ export default function Home() {
             placeholder="Nhập từ khóa để tìm kiếm công cụ..."
           />
         </div>
-        <div className="mt-16 ld:mt-20">
+        <div className="my-16 ld:my-20">
           {sidebarData?.map((item, index) => {
             const filterItems = item.items.filter((item) =>
               item.name.toLocaleLowerCase().includes(search.toLocaleLowerCase())
