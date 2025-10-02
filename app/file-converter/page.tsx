@@ -1,8 +1,83 @@
 "use client";
 
+import jsPDF from "jspdf";
+import { Metadata } from 'next';
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
+
+export const metadata: Metadata = {
+  title: 'File Converter - Convert Files Online | MultiTools',
+  description: 'Free online file converter. Convert documents, images, videos, and other files between different formats. No registration required.',
+  keywords: [
+    'file converter',
+    'convert files',
+    'document converter',
+    'image converter',
+    'video converter',
+    'format converter',
+    'file tool',
+    'conversion tool',
+    'file utility',
+    'convert online',
+    'file format',
+    'document format',
+    'image format',
+    'video format',
+    'file transformation',
+    'format change',
+    'file processor',
+    'conversion utility',
+    'file helper',
+    'format tool'
+  ],
+  authors: [{ name: 'MultiTools' }],
+  creator: 'MultiTools',
+  publisher: 'MultiTools',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://congcu4u.vercel.app/file-converter',
+    title: 'File Converter - Convert Files Online',
+    description: 'Free online file converter. Convert documents, images, videos, and other files between different formats. No registration required.',
+    siteName: 'MultiTools',
+    images: [
+      {
+        url: '/og-file-converter.png',
+        width: 1200,
+        height: 630,
+        alt: 'File Converter - Convert Files Online',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'File Converter - Convert Files Online',
+    description: 'Free online file converter. Convert documents, images, videos, and other files between different formats. No registration required.',
+    images: ['/og-file-converter.png'],
+  },
+  alternates: {
+    canonical: 'https://congcu4u.vercel.app/file-converter',
+  },
+  category: 'technology',
+  classification: 'Developer Tools',
+  other: {
+    'application-name': 'File Converter',
+    'apple-mobile-web-app-title': 'File Converter',
+    'msapplication-TileColor': '#000000',
+    'theme-color': '#000000',
+  },
+};
 
 const convertTypes = [
   { value: "excel-to-csv", label: "Excel (.xlsx) → CSV" },

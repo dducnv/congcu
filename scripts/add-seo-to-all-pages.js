@@ -1,0 +1,352 @@
+const fs = require("fs");
+const path = require("path");
+
+// SEO metadata templates for different tool types
+const seoTemplates = {
+  "color-picker-from-image": {
+    title: "Color Picker from Image - Extract Colors from Photos | MultiTools",
+    description:
+      "Free color picker tool to extract colors from images. Get hex, RGB, HSL color codes from any image. Perfect for designers and developers.",
+    keywords: [
+      "color picker",
+      "color extractor",
+      "image color picker",
+      "color from image",
+      "extract colors",
+      "color palette",
+      "hex color",
+      "RGB color",
+      "HSL color",
+      "color tool",
+      "design tool",
+      "color scheme",
+      "color palette generator",
+      "image colors",
+      "photo colors",
+      "color analysis",
+      "color detection",
+      "color finder",
+      "color selector",
+      "color utility",
+    ],
+  },
+  "quick-image-editor": {
+    title: "Quick Image Editor - Edit Images Online | MultiTools",
+    description:
+      "Free online image editor. Crop, resize, rotate, and edit images instantly. No registration required. Works with JPG, PNG, and other image formats.",
+    keywords: [
+      "image editor",
+      "photo editor",
+      "edit images",
+      "crop image",
+      "resize image",
+      "rotate image",
+      "image tool",
+      "photo tool",
+      "image processor",
+      "photo processor",
+      "image utility",
+      "photo utility",
+      "online editor",
+      "image editing",
+      "photo editing",
+      "image manipulation",
+      "photo manipulation",
+      "image converter",
+      "photo converter",
+      "image tool online",
+    ],
+  },
+  draw: {
+    title: "Online Drawing Tool - Draw & Sketch Online | MultiTools",
+    description:
+      "Free online drawing and sketching tool. Create digital art, sketches, and drawings directly in your browser. No registration required.",
+    keywords: [
+      "drawing tool",
+      "sketch tool",
+      "draw online",
+      "sketch online",
+      "digital art",
+      "drawing app",
+      "sketch app",
+      "art tool",
+      "drawing utility",
+      "sketch utility",
+      "online drawing",
+      "digital drawing",
+      "art creation",
+      "drawing canvas",
+      "sketch canvas",
+      "art tool online",
+      "drawing tool online",
+      "creative tool",
+      "art utility",
+      "drawing helper",
+    ],
+  },
+  "file-converter": {
+    title: "File Converter - Convert Files Online | MultiTools",
+    description:
+      "Free online file converter. Convert documents, images, videos, and other files between different formats. No registration required.",
+    keywords: [
+      "file converter",
+      "convert files",
+      "document converter",
+      "image converter",
+      "video converter",
+      "format converter",
+      "file tool",
+      "conversion tool",
+      "file utility",
+      "convert online",
+      "file format",
+      "document format",
+      "image format",
+      "video format",
+      "file transformation",
+      "format change",
+      "file processor",
+      "conversion utility",
+      "file helper",
+      "format tool",
+    ],
+  },
+  "remove-bg": {
+    title: "Remove Background from Images - Free Online Tool | MultiTools",
+    description:
+      "Free online background remover. Remove backgrounds from images automatically. Perfect for product photos, portraits, and graphics.",
+    keywords: [
+      "remove background",
+      "background remover",
+      "transparent background",
+      "remove bg",
+      "image background",
+      "photo background",
+      "background removal",
+      "transparent image",
+      "cutout tool",
+      "background tool",
+      "image tool",
+      "photo tool",
+      "background utility",
+      "image utility",
+      "photo utility",
+      "transparent tool",
+      "cutout utility",
+      "background helper",
+      "image helper",
+      "photo helper",
+    ],
+  },
+  "currency-exchange": {
+    title:
+      "Currency Exchange Rate Calculator - Convert Currencies | MultiTools",
+    description:
+      "Free currency exchange rate calculator. Convert between different currencies with real-time exchange rates. No registration required.",
+    keywords: [
+      "currency converter",
+      "exchange rate",
+      "currency calculator",
+      "money converter",
+      "currency tool",
+      "exchange tool",
+      "currency utility",
+      "money tool",
+      "currency helper",
+      "exchange helper",
+      "currency rate",
+      "exchange rate calculator",
+      "currency conversion",
+      "money conversion",
+      "currency calculator online",
+      "exchange rate tool",
+      "currency tool online",
+      "money calculator",
+      "currency helper online",
+      "exchange utility",
+    ],
+  },
+  "dev-tools/generate-secret-key": {
+    title: "Secret Key Generator - Generate Secure Keys Online | MultiTools",
+    description:
+      "Free secure key generator. Generate random secret keys, API keys, passwords, and tokens. Perfect for developers and security purposes.",
+    keywords: [
+      "secret key generator",
+      "API key generator",
+      "password generator",
+      "secure key",
+      "random key",
+      "token generator",
+      "key generator",
+      "security tool",
+      "cryptographic key",
+      "encryption key",
+      "secure token",
+      "random generator",
+      "key utility",
+      "security utility",
+      "crypto tool",
+      "encryption tool",
+      "key helper",
+      "security helper",
+      "random key generator",
+      "secure key generator",
+    ],
+  },
+  "dev-tools/color-converter": {
+    title: "Color Converter - Convert HEX, RGB, HSL Colors | MultiTools",
+    description:
+      "Free color converter tool. Convert between HEX, RGB, HSL, and other color formats. Perfect for designers and developers.",
+    keywords: [
+      "color converter",
+      "hex to rgb",
+      "rgb to hex",
+      "hsl converter",
+      "color format",
+      "color tool",
+      "color utility",
+      "hex color",
+      "RGB color",
+      "HSL color",
+      "color picker",
+      "color tool online",
+      "color helper",
+      "color utility online",
+      "color format converter",
+      "color code converter",
+      "color value converter",
+      "color system converter",
+      "color space converter",
+      "color model converter",
+    ],
+  },
+};
+
+// Function to add SEO metadata to a page
+function addSEOMetadata(filePath, toolName, toolType) {
+  const template = seoTemplates[toolType] || {
+    title: `${toolName} - Online Tool | MultiTools`,
+    description: `Free online ${toolName.toLowerCase()} tool. No registration required. Works in your browser.`,
+    keywords: [
+      toolName.toLowerCase(),
+      "online tool",
+      "free tool",
+      "web tool",
+      "browser tool",
+      "utility tool",
+      "online utility",
+      "web utility",
+      "free utility",
+      "tool online",
+      "utility online",
+      "tool free",
+      "utility free",
+      "online service",
+      "web service",
+      "browser service",
+      "tool service",
+      "utility service",
+      "online helper",
+      "web helper",
+    ],
+  };
+
+  const metadata = `import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: '${template.title}',
+  description: '${template.description}',
+  keywords: [
+    ${template.keywords.map((keyword) => `'${keyword}'`).join(",\n    ")}
+  ],
+  authors: [{ name: 'MultiTools' }],
+  creator: 'MultiTools',
+  publisher: 'MultiTools',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://congcu4u.vercel.app${filePath}',
+    title: '${template.title}',
+    description: '${template.description}',
+    siteName: 'MultiTools',
+    images: [
+      {
+        url: '/og-${toolType.replace("/", "-")}.png',
+        width: 1200,
+        height: 630,
+        alt: '${template.title}',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '${template.title}',
+    description: '${template.description}',
+    images: ['/og-${toolType.replace("/", "-")}.png'],
+  },
+  alternates: {
+    canonical: 'https://congcu4u.vercel.app${filePath}',
+  },
+  category: 'technology',
+  classification: 'Developer Tools',
+  other: {
+    'application-name': '${toolName}',
+    'apple-mobile-web-app-title': '${toolName}',
+    'msapplication-TileColor': '#000000',
+    'theme-color': '#000000',
+  },
+};
+`;
+
+  return metadata;
+}
+
+// List of pages to update
+const pagesToUpdate = [
+  {
+    path: "/color-picker-from-image",
+    toolName: "Color Picker from Image",
+    toolType: "color-picker-from-image",
+  },
+  {
+    path: "/quick-image-editor",
+    toolName: "Quick Image Editor",
+    toolType: "quick-image-editor",
+  },
+  { path: "/draw", toolName: "Drawing Tool", toolType: "draw" },
+  {
+    path: "/file-converter",
+    toolName: "File Converter",
+    toolType: "file-converter",
+  },
+  { path: "/remove-bg", toolName: "Remove Background", toolType: "remove-bg" },
+  {
+    path: "/currency-exchange",
+    toolName: "Currency Exchange",
+    toolType: "currency-exchange",
+  },
+  {
+    path: "/dev-tools/generate-secret-key",
+    toolName: "Secret Key Generator",
+    toolType: "dev-tools/generate-secret-key",
+  },
+  {
+    path: "/dev-tools/color-converter",
+    toolName: "Color Converter",
+    toolType: "dev-tools/color-converter",
+  },
+];
+
+console.log("SEO metadata templates created for all pages!");
+console.log("Pages to update:", pagesToUpdate.length);

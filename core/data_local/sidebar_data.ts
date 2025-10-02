@@ -10,71 +10,65 @@ type SidebarItem = {
   desc: string;
 };
 
-// chuyển đổi
-const chuyenDoiItems: SidebarItem[] = [
+// conversion
+const conversionItems: SidebarItem[] = [
   {
-    name: "Trích xuất văn bản từ hình ảnh",
+    name: "Extract text from image",
     href: "/image-to-text",
     icon: "",
-    desc: "Trích xuất văn bản từ các hình ảnh như JPG, PNG.",
-  },
-  {
-    name: "Chuyển đổi file",
-    href: "/file-converter",
-    icon: "",
-    desc: "Chuyển đổi file từ định dạng này sang định dạng khác.",
+    desc: "Extract text from images like JPG, PNG.",
   },
 ];
-const chuyenDoi: SidebarModel = {
-  title: "🚀 Chuyển Đổi",
-  items: chuyenDoiItems,
+const conversion: SidebarModel = {
+  title: "🚀 Conversion",
+  items: conversionItems,
 };
 
-// cong cu
+// tools
 
-const congCuItems: SidebarItem[] = [
+const toolsItems: SidebarItem[] = [
   {
-    name: "Ghi chú",
+    name: "Quick Note",
     href: "/quicknote",
     icon: "",
-    desc: "Ghi chú.",
+    desc: "Take quick notes.",
   },
   {
     name: "Emoji",
     href: "/emoji",
     icon: "",
-    desc: "Tổng hợp emoji.",
+    desc: "Emoji collection.",
   },
 
   {
-    name: "Tính tỉ lệ %",
+    name: "Calculate percentage",
     href: "/percentity",
     icon: "",
-    desc: "Công cụ tính % nhanh (có công thức).",
+    desc: "Quick percentage calculator (with formulas).",
   },
   {
-    name: "Chọn màu từ ảnh",
+    name: "Color picker from image",
     href: "/color-picker-from-image",
     icon: "",
-    desc: "Chức năng như tên.",
+    desc: "Pick colors from images.",
   },
   {
-    name: "Chỉnh sửa ảnh",
+    name: "Quick image editor",
     href: "/quick-image-editor",
     icon: "",
-    desc: "Cung cấp các công cụ chỉnh sửa ảnh nhanh.",
+    desc: "Provides quick image editing tools.",
   },
   {
-    name: "Vẽ",
+    name: "Draw",
     href: "/draw",
     icon: "",
-    desc: "Vẽ trên màn hình."
+    desc: "Draw on screen."
   }
 ];
 
-const congCu: SidebarModel = {
-  title: "🛠 Công Cụ ",
-  items: congCuItems,
+const tools: SidebarModel = {
+  title: "🛠 Tools ",
+  items: toolsItems,
 };
 
 // developer tools
@@ -85,6 +79,12 @@ const developerToolsItems: SidebarItem[] = [
     href: "/dev-tools/read-json",
     icon: "",
     desc: "",
+  },
+  {
+    name: "CSV Viewer",
+    href: "/dev-tools/csv-viewer",
+    icon: "",
+    desc: "View, analyze and visualize CSV data with statistics and charts",
   },
   {
     name: "Generate secret key",
@@ -105,13 +105,13 @@ const developerTools: SidebarModel = {
   items: developerToolsItems,
 };
 
-export const sidebarData: SidebarModel[] = [chuyenDoi, congCu, developerTools];
+export const sidebarData: SidebarModel[] = [conversion, tools, developerTools];
 
 export const navData: SidebarItem[] = [
   {
-    name: "Trang chủ",
+    name: "Home",
     href: "/",
     icon: "",
-    desc: "Trang chủ",
+    desc: "Home page",
   }
 ];

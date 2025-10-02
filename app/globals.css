@@ -45,3 +45,13 @@ body {
 }
 
 
+.fake-caret {
+  display: inline-block;
+  color: #222;
+  animation: blink 1s steps(1) infinite;
+  font-weight: bold;
+}
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}

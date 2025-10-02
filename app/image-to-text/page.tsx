@@ -1,132 +1,82 @@
-'use client'
-import { TitlePage } from '@/components'
-import React, { useState } from 'react'
-import Tesseract from 'tesseract.js'
+import ImageToTextPage from "@/components/image_to_text/image_to_text";
+import { Metadata } from 'next';
 
-const LANGS = [
-  { code: 'vie', label: 'Tiếng Việt' },
-  { code: 'eng', label: 'English' },
-]
+export const metadata: Metadata = {
+  title: 'Image to Text Converter - Extract Text from Images Online | MultiTools',
+  description: 'Free OCR tool to extract text from images. Convert JPG, PNG, PDF images to text online. No registration required. Works with any language and handwriting.',
+  keywords: [
+    'image to text',
+    'OCR online',
+    'text extractor',
+    'image OCR',
+    'extract text from image',
+    'photo to text',
+    'scan text',
+    'image text recognition',
+    'OCR converter',
+    'text scanner',
+    'image text extractor',
+    'free OCR',
+    'online OCR',
+    'text recognition',
+    'image text reader',
+    'photo text extractor',
+    'handwriting recognition',
+    'document scanner',
+    'text from image',
+    'image text converter'
+  ],
+  authors: [{ name: 'MultiTools' }],
+  creator: 'MultiTools',
+  publisher: 'MultiTools',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://congcu4u.vercel.app/image-to-text',
+    title: 'Image to Text Converter - Extract Text from Images Online',
+    description: 'Free OCR tool to extract text from images. Convert JPG, PNG, PDF images to text online. No registration required.',
+    siteName: 'MultiTools',
+    images: [
+      {
+        url: '/og-image-to-text.png',
+        width: 1200,
+        height: 630,
+        alt: 'Image to Text Converter - Extract Text from Images Online',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Image to Text Converter - Extract Text from Images Online',
+    description: 'Free OCR tool to extract text from images. Convert JPG, PNG, PDF images to text online. No registration required.',
+    images: ['/og-image-to-text.png'],
+  },
+  alternates: {
+    canonical: 'https://congcu4u.vercel.app/image-to-text',
+  },
+  category: 'technology',
+  classification: 'Developer Tools',
+  other: {
+    'application-name': 'Image to Text Converter',
+    'apple-mobile-web-app-title': 'Image to Text Converter',
+    'msapplication-TileColor': '#000000',
+    'theme-color': '#000000',
+  },
+};
 
-const ImageToTextPage = () => {
-  const [file, setFile] = useState<File | null>(null)
-  const [imgUrl, setImgUrl] = useState<string | null>(null)
-  const [text, setText] = useState<string>("")
-  const [progress, setProgress] = useState<number>(0)
-  const [loading, setLoading] = useState(false)
-  const [lang, setLang] = useState('vie')
-  const [error, setError] = useState("")
-  const [copied, setCopied] = useState(false)
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(""); setText(""); setProgress(0); setCopied(false)
-    const f = e.target.files?.[0] || null
-    setFile(f)
-    setImgUrl(f ? URL.createObjectURL(f) : null)
-  }
-
-  const handleOCR = async () => {
-    if (!file) return
-    setLoading(true)
-    setText("")
-    setProgress(0)
-    setError("")
-    try {
-      const { data } = await Tesseract.recognize(file, lang, {
-        logger: m => {
-          if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100))
-        }
-      })
-      setText(data.text)
-    } catch (e) {
-      setError("Lỗi nhận diện. Hãy thử lại hoặc chọn ảnh khác.")
-    }
-    setLoading(false)
-  }
-
-  const handleCopy = () => {
-    if (!text) return
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1200)
-  }
-
-  const handleDownload = () => {
-    if (!text) return
-    const blob = new Blob([text], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'image-to-text.txt'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto p-4 min-h-screen text-center">
-      <TitlePage>Chuyển ảnh thành văn bản (OCR)</TitlePage>
-      <div className="my-4">
-        <input type="file" accept="image/*" onChange={handleFileChange} />
-      </div>
-      <div className="mb-4">
-        <label className="mr-2 font-semibold">Ngôn ngữ nhận diện:</label>
-        <select value={lang} onChange={e => setLang(e.target.value)} className="border px-2 py-1 rounded">
-          {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
-        </select>
-      </div>
-      {imgUrl && (
-        <div className="mb-4 flex flex-col items-center">
-          <img src={imgUrl} alt="preview" className="max-h-64 rounded shadow mb-2" />
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-            onClick={handleOCR}
-            disabled={loading}
-          >
-            {loading ? "Đang nhận diện..." : "Nhận diện văn bản"}
-          </button>
-        </div>
-      )}
-      {loading && (
-        <div className="mb-4">
-          <div className="w-full bg-gray-200 rounded-full h-3">
-            <div className="bg-blue-500 h-3 rounded-full" style={{ width: `${progress}%` }}></div>
-          </div>
-          <div className="text-sm mt-1">{progress}%</div>
-        </div>
-      )}
-      {error && <div className="text-red-600 mb-3">{error}</div>}
-      {text && (
-        <div className="mt-6 text-left">
-          <div className="flex items-center mb-2 gap-2">
-            <span className="font-semibold">Kết quả:</span>
-            <button
-              onClick={handleCopy}
-              className="text-mono py-2 px-4 border border-black bg-white hover:bg-indigo-500 hover:text-white text-black rounded transition"
-            >
-              Copy
-            </button>
-            <button
-              onClick={handleDownload}
-              className="text-mono py-2 px-4 border border-black bg-white hover:bg-indigo-500 hover:text-white text-black rounded transition"
-            >
-              Tải TXT
-            </button>
-            {copied && <span className="ml-2 text-green-500 text-xs">Đã copy!</span>}
-          </div>
-          <textarea
-            className="w-full border rounded p-2 text-mono min-h-40"
-            value={text}
-            readOnly
-            rows={8}
-          />
-        </div>
-      )}
-      <div className="mt-8 text-gray-500 text-sm">
-        <b>Lưu ý:</b> Ảnh được xử lý hoàn toàn trên trình duyệt, an toàn và bảo mật.<br />
-        Hỗ trợ tiếng Việt và tiếng Anh.
-      </div>
-    </div>
-  )
+const page = () => {
+  return <ImageToTextPage />
 }
 
-export default ImageToTextPage
+export default page
