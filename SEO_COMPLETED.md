@@ -84,7 +84,7 @@
 
 #### **Sitemap** (`/sitemap.xml`)
 
-- ✅ Đã cập nhật domain: `https://congcu4u.vercel.app`
+- ✅ Đã cập nhật domain: `https://tools4u.vercel.app`
 - ✅ Bao gồm tất cả 13 pages
 - ✅ Priority được phân bổ hợp lý:
   - Homepage: 1.0
@@ -130,11 +130,11 @@
 Sau khi deploy, có thể kiểm tra:
 
 - Google Search Console để xem indexing status
-- Sitemap tại: `https://congcu4u.vercel.app/sitemap.xml`
-- Robots.txt tại: `https://congcu4u.vercel.app/robots.txt`
+- Sitemap tại: `https://tools4u.vercel.app/sitemap.xml`
+- Robots.txt tại: `https://tools4u.vercel.app/robots.txt`
 
 ---
 
 **✅ SEO Implementation: COMPLETED**
 **📅 Date: $(date)**
-**🔗 Domain: https://congcu4u.vercel.app**
+**🔗 Domain: https://tools4u.vercel.app**

@@ -1,4 +1,3 @@
-import { TitlePage } from '@/components';
 import { PercentBlocks } from "@/components/percentity/percentity";
 import { Metadata } from "next";
 export const metadata: Metadata = {
@@ -43,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/percentity',
+    url: 'https://tools4u.vercel.app/percentity',
     title: 'Percentage Calculator - Calculate Percentages Online',
     description: 'Free percentage calculator tool. Calculate percentages, percentage increase, decrease, and percentage of a number. Includes formulas and examples.',
     siteName: 'MultiTools',
@@ -63,7 +62,7 @@ export const metadata: Metadata = {
     images: ['/og-percentage-calculator.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/percentity',
+    canonical: 'https://tools4u.vercel.app/percentity',
   },
   category: 'technology',
   classification: 'Developer Tools',

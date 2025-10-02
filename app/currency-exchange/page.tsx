@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/currency-exchange',
+    url: 'https://tools4u.vercel.app/currency-exchange',
     title: 'Currency Exchange Rate Calculator - Convert Currencies',
     description: 'Free currency exchange rate calculator. Convert between different currencies with real-time exchange rates. No registration required.',
     siteName: 'MultiTools',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     images: ['/og-currency-converter.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/currency-exchange',
+    canonical: 'https://tools4u.vercel.app/currency-exchange',
   },
   category: 'technology',
   classification: 'Developer Tools',

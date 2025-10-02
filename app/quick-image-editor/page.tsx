@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/quick-image-editor',
+    url: 'https://tools4u.vercel.app/quick-image-editor',
     title: 'Quick Image Editor - Edit Images Online',
     description: 'Free online image editor. Crop, resize, rotate, and edit images instantly. No registration required. Works with JPG, PNG, and other image formats.',
     siteName: 'MultiTools',
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     images: ['/og-image-editor.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/quick-image-editor',
+    canonical: 'https://tools4u.vercel.app/quick-image-editor',
   },
   category: 'technology',
   classification: 'Developer Tools',

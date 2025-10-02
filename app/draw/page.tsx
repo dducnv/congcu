@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/draw',
+    url: 'https://tools4u.vercel.app/draw',
     title: 'Online Drawing Tool - Draw & Sketch Online',
     description: 'Free online drawing and sketching tool. Create digital art, sketches, and drawings directly in your browser. No registration required.',
     siteName: 'MultiTools',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     images: ['/og-drawing-tool.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/draw',
+    canonical: 'https://tools4u.vercel.app/draw',
   },
   category: 'technology',
   classification: 'Developer Tools',

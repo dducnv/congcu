@@ -6,7 +6,7 @@ import 'tldraw/tldraw.css';
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'MultiTools - Free Online Developer Tools & Utilities | congcu4u.vercel.app',
+  title: 'MultiTools - Free Online Developer Tools & Utilities | tools4u.vercel.app',
   description: 'Free online developer tools and utilities. JSON formatter, image to text converter, color picker, emoji picker, file converter, and more. All tools are free and work in your browser.',
   keywords: [
     'online tools',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app',
+    url: 'https://tools4u.vercel.app',
     title: 'MultiTools - Free Online Developer Tools & Utilities',
     description: 'Free online developer tools and utilities. JSON formatter, image to text converter, color picker, emoji picker, file converter, and more.',
     siteName: 'MultiTools',
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     images: ['/og-multitools.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app',
+    canonical: 'https://tools4u.vercel.app',
   },
   category: 'technology',
   classification: 'Developer Tools',

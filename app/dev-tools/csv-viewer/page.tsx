@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/dev-tools/csv-viewer',
+    url: 'https://tools4u.vercel.app/dev-tools/csv-viewer',
     title: 'CSV Viewer & Analyzer - View, Analyze & Visualize CSV Data',
     description: 'Free CSV viewer and data analyzer. Upload CSV files, view data in tables, generate statistics, create charts, and perform data analysis.',
     siteName: 'MultiTools',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     images: ['/og-csv-viewer.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/dev-tools/csv-viewer',
+    canonical: 'https://tools4u.vercel.app/dev-tools/csv-viewer',
   },
   category: 'technology',
   classification: 'Developer Tools',

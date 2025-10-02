@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/dev-tools/read-json',
+    url: 'https://tools4u.vercel.app/dev-tools/read-json',
     title: 'JSON Tool - Fix, Format, Validate & Compare JSON Online',
     description: 'Free JSON tool - Fix JSON errors, format, validate, search and compare JSON. Supports malformed JSON like {key: value}. Best online JSON tool for developers.',
     siteName: 'MultiTools',
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     images: ['/og-json-tool.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/dev-tools/read-json',
+    canonical: 'https://tools4u.vercel.app/dev-tools/read-json',
   },
   category: 'technology',
   classification: 'Developer Tools',

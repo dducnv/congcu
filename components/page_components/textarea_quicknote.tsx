@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { XMarkIcon, PlusIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
-import { uid } from "uid";
 import { decryptData, encryptData } from "@/core/utils";
+import { ChevronDownIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { useEffect, useState } from "react";
+import { uid } from "uid";
 
 type TextareaQuicknoteItem = {
   date: string;
@@ -61,11 +61,11 @@ export const TextareaQuicknote = () => {
 
   function downloadFile(filename: string, text: string) {
     if (text === "") {
-      alert("Không thể tải file rỗng");
+      alert("Cannot download empty file");
       return;
     }
 
-    const filName = prompt("Nhập tên file", filename.replace(".txt", ""));
+    const filName = prompt("Enter file name", filename.replace(".txt", ""));
     if (filName === null) {
       return;
     }
@@ -120,7 +120,7 @@ export const TextareaQuicknote = () => {
   }
 
   function addTabNotes() {
-    var tabName = prompt("Nhập tên tab", "New Tab");
+    var tabName = prompt("Enter tab name", "New Tab");
     const newTab = {
       date: dateTimeNow,
       notes: "",
@@ -144,10 +144,10 @@ export const TextareaQuicknote = () => {
 
   function deleteTabNotes(tab: TextareaQuicknoteItem) {
     if (textNotesList.length === 1) {
-      alert("Không thể xóa tab cuối cùng");
+      alert("Cannot delete the last tab");
       return;
     }
-    if (tab.notes !== "" && !confirm("Bạn có chắc chắn muốn xóa tab này?")) {
+    if (tab.notes !== "" && !confirm("Are you sure you want to delete this tab?")) {
       return;
     }
     const getIndexOfTab = textNotesList.findIndex((item) => item.id === tab.id);
@@ -211,7 +211,7 @@ export const TextareaQuicknote = () => {
   }
 
   function editFileName(tab: TextareaQuicknoteItem) {
-    var tabName = prompt("Nhập tên tab", tab.file_name);
+    var tabName = prompt("Enter tab name", tab.file_name);
 
     if (tabName === null) {
       return;
@@ -257,7 +257,7 @@ export const TextareaQuicknote = () => {
 
         if (file) {
           if (file.name.split(".")[1] !== "txt") {
-            alert("File không hợp lệ");
+            alert("Invalid file");
             return;
           }
           const reader: FileReader = new FileReader();
@@ -275,7 +275,7 @@ export const TextareaQuicknote = () => {
               );
 
               if (dataDecoded === null) {
-                alert("Lỗi khi giải mã file");
+                alert("Error decrypting file");
                 return;
               }
               //check if json is valid
@@ -283,7 +283,7 @@ export const TextareaQuicknote = () => {
               try {
                 JSON.parse(dataDecoded.toString());
               } catch (e) {
-                alert("File không hợp lệ");
+                alert("Invalid file");
                 return;
               }
 
@@ -303,13 +303,13 @@ export const TextareaQuicknote = () => {
       };
       input.click();
     } catch (error) {
-      alert("Lỗi khi import file");
+      alert("Error importing file");
     }
   }
 
   function formatText() {
     if (!selectedTab || !selectedTab.notes) {
-      alert("Không có nội dung để format");
+      alert("No content to format");
       return;
     }
 
@@ -361,7 +361,7 @@ export const TextareaQuicknote = () => {
 
   function formatToParagraph() {
     if (!selectedTab || !selectedTab.notes) {
-      alert("Không có nội dung để format");
+      alert("No content to format");
       return;
     }
 
@@ -378,7 +378,7 @@ export const TextareaQuicknote = () => {
 
   function formatToUpperCase() {
     if (!selectedTab || !selectedTab.notes) {
-      alert("Không có nội dung để format");
+      alert("No content to format");
       return;
     }
 
@@ -389,7 +389,7 @@ export const TextareaQuicknote = () => {
 
   function formatToLowerCase() {
     if (!selectedTab || !selectedTab.notes) {
-      alert("Không có nội dung để format");
+      alert("No content to format");
       return;
     }
 
@@ -400,7 +400,7 @@ export const TextareaQuicknote = () => {
 
   function formatToTitleCase() {
     if (!selectedTab || !selectedTab.notes) {
-      alert("Không có nội dung để format");
+      alert("No content to format");
       return;
     }
 
@@ -412,28 +412,28 @@ export const TextareaQuicknote = () => {
         return word.charAt(0).toUpperCase() + word.slice(1);
       })
       .join(' ');
-    
+
     updateTextContent(formattedText);
     setShowFormatDropdown(false);
   }
 
   function formatToSentenceCase() {
     if (!selectedTab || !selectedTab.notes) {
-      alert("Không có nội dung để format");
+      alert("No content to format");
       return;
     }
 
     const formattedText = selectedTab.notes
       .toLowerCase()
       .replace(/(^\w|\.\s+\w)/g, (char) => char.toUpperCase());
-    
+
     updateTextContent(formattedText);
     setShowFormatDropdown(false);
   }
 
   function formatCapitalizeLines() {
     if (!selectedTab || !selectedTab.notes) {
-      alert("Không có nội dung để format");
+      alert("No content to format");
       return;
     }
 
@@ -445,14 +445,14 @@ export const TextareaQuicknote = () => {
         return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
       })
       .join('\n');
-    
+
     updateTextContent(formattedText);
     setShowFormatDropdown(false);
   }
 
   function formatRemoveExtraSpaces() {
     if (!selectedTab || !selectedTab.notes) {
-      alert("Không có nội dung để format");
+      alert("No content to format");
       return;
     }
 
@@ -467,7 +467,7 @@ export const TextareaQuicknote = () => {
       .replace(/\n\s*\n\s*\n/g, '\n\n')
       // Loại bỏ khoảng trắng ở đầu và cuối toàn bộ văn bản
       .trim();
-    
+
     updateTextContent(formattedText);
     setShowFormatDropdown(false);
   }
@@ -482,13 +482,13 @@ export const TextareaQuicknote = () => {
     const text = selectedTab.notes.toLowerCase();
     const term = searchTerm.toLowerCase();
     const results: number[] = [];
-    
+
     let index = text.indexOf(term);
     while (index !== -1) {
       results.push(index);
       index = text.indexOf(term, index + 1);
     }
-    
+
     setSearchResults(results);
     setCurrentSearchIndex(results.length > 0 ? 0 : -1);
   }
@@ -509,7 +509,7 @@ export const TextareaQuicknote = () => {
 
   function scrollToSearchResult(index: number) {
     if (index < 0 || index >= searchResults.length) return;
-    
+
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
     if (textarea) {
       const position = searchResults[index];
@@ -525,13 +525,13 @@ export const TextareaQuicknote = () => {
     }
 
     const position = searchResults[currentSearchIndex];
-    const newText = selectedTab.notes.substring(0, position) + 
-                   replaceTerm + 
-                   selectedTab.notes.substring(position + searchTerm.length);
-    
+    const newText = selectedTab.notes.substring(0, position) +
+      replaceTerm +
+      selectedTab.notes.substring(position + searchTerm.length);
+
     updateTextContent(newText);
-    
-    // Cập nhật lại kết quả tìm kiếm
+
+    // Update search results
     setTimeout(() => {
       searchInText();
     }, 100);
@@ -543,42 +543,42 @@ export const TextareaQuicknote = () => {
     }
 
     const newText = selectedTab.notes.replace(
-      new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 
+      new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
       replaceTerm
     );
-    
+
     updateTextContent(newText);
-    
-    // Reset tìm kiếm
+
+    // Reset search
     setSearchResults([]);
     setCurrentSearchIndex(-1);
     setSearchTerm("");
     setReplaceTerm("");
   }
 
-  // Tự động tìm kiếm khi searchTerm thay đổi
+  // Auto search when searchTerm changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       searchInText();
     }, 300);
-    
+
     return () => clearTimeout(timeoutId);
   }, [searchTerm, selectedTab?.notes]);
 
-  // Phím tắt
+  // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.ctrlKey && event.key === 'f') {
         event.preventDefault();
         setShowSearchReplace(true);
         setTimeout(() => {
-          const searchInput = document.querySelector('input[placeholder="Tìm kiếm..."]') as HTMLInputElement;
+          const searchInput = document.querySelector('input[placeholder="Search..."]') as HTMLInputElement;
           if (searchInput) {
             searchInput.focus();
           }
         }, 100);
       }
-      
+
       if (event.key === 'Escape' && showSearchReplace) {
         setShowSearchReplace(false);
       }
@@ -590,7 +590,7 @@ export const TextareaQuicknote = () => {
     };
   }, [showSearchReplace]);
 
-  // Hàm tính toán thống kê văn bản
+  // Function to calculate text statistics
   function calculateTextStats() {
     if (!selectedTab?.notes) {
       return {
@@ -604,21 +604,21 @@ export const TextareaQuicknote = () => {
     }
 
     const text = selectedTab.notes;
-    
-    // Đếm ký tự
+
+    // Count characters
     const characters = text.length;
     const charactersNoSpaces = text.replace(/\s/g, '').length;
-    
-    // Đếm từ (loại bỏ khoảng trắng thừa và chia theo khoảng trắng)
+
+    // Count words (remove extra spaces and split by spaces)
     const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-    
-    // Đếm dòng
+
+    // Count lines
     const lines = text === '' ? 0 : text.split('\n').length;
-    
-    // Đếm đoạn văn (dòng không rỗng)
+
+    // Count paragraphs (non-empty lines)
     const paragraphs = text.trim() === '' ? 0 : text.split('\n').filter(line => line.trim() !== '').length;
-    
-    // Tính thời gian đọc (trung bình 200 từ/phút)
+
+    // Calculate reading time (average 200 words/minute)
     const readingTime = Math.ceil(words / 200);
 
     return {
@@ -646,13 +646,13 @@ export const TextareaQuicknote = () => {
             }
             className="hover:underline hover:cursor-pointer"
           >
-            Lưu
+            Save
           </a>
           <a
             onClick={importFile}
             className="hover:underline hover:cursor-pointer"
           >
-            thêm file
+            Import File
           </a>
           <div className="relative format-dropdown">
             <a
@@ -668,43 +668,43 @@ export const TextareaQuicknote = () => {
                     onClick={formatToParagraph}
                     className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                   >
-                    Chuyển thành đoạn văn
+                    Convert to Paragraph
                   </a>
                   <a
                     onClick={formatToUpperCase}
                     className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                   >
-                    VIẾT HOA TẤT CẢ
+                    UPPERCASE ALL
                   </a>
                   <a
                     onClick={formatToLowerCase}
                     className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                   >
-                    viết thường tất cả
+                    lowercase all
                   </a>
                   <a
                     onClick={formatToTitleCase}
                     className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                   >
-                    Viết Hoa Chữ Cái Đầu Mỗi Từ
+                    Title Case Each Word
                   </a>
                   <a
                     onClick={formatToSentenceCase}
                     className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                   >
-                    Viết hoa chữ cái đầu câu
+                    Sentence case
                   </a>
                   <a
                     onClick={formatCapitalizeLines}
                     className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                   >
-                    Viết hoa đầu mỗi dòng
+                    Capitalize each line
                   </a>
                   <a
                     onClick={formatRemoveExtraSpaces}
                     className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                   >
-                    Xóa khoảng trắng thừa
+                    Remove extra spaces
                   </a>
                 </div>
               </div>
@@ -714,13 +714,13 @@ export const TextareaQuicknote = () => {
             onClick={() => setShowSearchReplace(!showSearchReplace)}
             className="hover:underline hover:cursor-pointer"
           >
-            Tìm kiếm
+            Search
           </a>
           <a
             onClick={() => setShowStats(!showStats)}
             className="hover:underline hover:cursor-pointer"
           >
-            Thống kê
+            Statistics
           </a>
         </div>
         <div className="flex space-x-3">
@@ -728,13 +728,13 @@ export const TextareaQuicknote = () => {
             onClick={backupData}
             className="hover:underline hover:cursor-pointer"
           >
-            Sao lưu
+            Backup
           </a>
           <a
             onClick={importBackupData}
             className="hover:underline hover:cursor-pointer"
           >
-            Khôi phục
+            Restore
           </a>
         </div>
       </div>
@@ -745,11 +745,10 @@ export const TextareaQuicknote = () => {
               key={item.id}
               className={`
                                 min-w-32 max-w-44
-                                flex space-x-2 justify-center items-center border hover:cursor-pointer  pl-2 pr-1 py-1 ${
-                                  item.id === selectedTab?.id
-                                    ? "bg-gray-50 border-black"
-                                    : "border-gray-300 text-gray-500"
-                                }`}
+                                flex space-x-2 justify-center items-center border hover:cursor-pointer  pl-2 pr-1 py-1 ${item.id === selectedTab?.id
+                  ? "bg-gray-50 border-black"
+                  : "border-gray-300 text-gray-500"
+                }`}
             >
               <span
                 onDoubleClick={() => editFileName(item)}
@@ -781,7 +780,7 @@ export const TextareaQuicknote = () => {
             <div className="flex items-center space-x-2">
               <input
                 type="text"
-                placeholder="Tìm kiếm..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-3 py-2 border border-black focus:outline-none focus:border-black"
@@ -804,11 +803,11 @@ export const TextareaQuicknote = () => {
                 {searchResults.length > 0 ? `${currentSearchIndex + 1}/${searchResults.length}` : '0/0'}
               </span>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <input
                 type="text"
-                placeholder="Thay thế bằng..."
+                placeholder="Replace with..."
                 value={replaceTerm}
                 onChange={(e) => setReplaceTerm(e.target.value)}
                 className="flex-1 px-3 py-2 border border-black focus:outline-none focus:border-black"
@@ -818,20 +817,20 @@ export const TextareaQuicknote = () => {
                 disabled={searchResults.length === 0 || currentSearchIndex < 0}
                 className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                Thay thế
+                Replace
               </button>
               <button
                 onClick={replaceAll}
                 disabled={searchResults.length === 0}
                 className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                Thay thế tất cả
+                Replace All
               </button>
               <button
                 onClick={() => setShowSearchReplace(false)}
                 className="px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
               >
-                Đóng
+                Close
               </button>
             </div>
           </div>
@@ -841,68 +840,68 @@ export const TextareaQuicknote = () => {
       {showStats && (
         <div className="mb-3 p-4 border border-black bg-blue-50">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-semibold text-gray-800">📊 Thống kê văn bản</h3>
+            <h3 className="text-lg font-semibold text-gray-800">📊 Text Statistics</h3>
             <button
               onClick={() => setShowStats(false)}
               className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
             >
-              Đóng
+              Close
             </button>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white p-3 border border-black">
               <div className="text-2xl font-bold text-blue-600">{textStats.words.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Số từ</div>
+              <div className="text-sm text-gray-600">Words</div>
             </div>
-            
+
             <div className="bg-white p-3 border border-black">
               <div className="text-2xl font-bold text-green-600">{textStats.characters.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Ký tự (có dấu cách)</div>
+              <div className="text-sm text-gray-600">Characters (with spaces)</div>
             </div>
-            
+
             <div className="bg-white p-3 border border-black">
               <div className="text-2xl font-bold text-purple-600">{textStats.charactersNoSpaces.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Ký tự (không dấu cách)</div>
+              <div className="text-sm text-gray-600">Characters (no spaces)</div>
             </div>
-            
+
             <div className="bg-white p-3 border border-black">
               <div className="text-2xl font-bold text-orange-600">{textStats.lines.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Số dòng</div>
+              <div className="text-sm text-gray-600">Lines</div>
             </div>
-            
+
             <div className="bg-white p-3 border border-black">
               <div className="text-2xl font-bold text-red-600">{textStats.paragraphs.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Đoạn văn</div>
+              <div className="text-sm text-gray-600">Paragraphs</div>
             </div>
-            
+
             <div className="bg-white p-3 border border-black">
               <div className="text-2xl font-bold text-indigo-600">
-                {textStats.readingTime} {textStats.readingTime === 1 ? 'phút' : 'phút'}
+                {textStats.readingTime} {textStats.readingTime === 1 ? 'min' : 'mins'}
               </div>
-              <div className="text-sm text-gray-600">Thời gian đọc</div>
+              <div className="text-sm text-gray-600">Reading time</div>
             </div>
-            
+
             <div className="bg-white p-3 border border-black">
               <div className="text-2xl font-bold text-teal-600">
                 {textStats.words > 0 ? (textStats.characters / textStats.words).toFixed(1) : '0'}
               </div>
-              <div className="text-sm text-gray-600">Ký tự/từ trung bình</div>
+              <div className="text-sm text-gray-600">Avg chars/word</div>
             </div>
-            
+
             <div className="bg-white p-3 border border-black">
               <div className="text-2xl font-bold text-pink-600">
                 {textStats.lines > 0 ? (textStats.words / textStats.lines).toFixed(1) : '0'}
               </div>
-              <div className="text-sm text-gray-600">Từ/dòng trung bình</div>
+              <div className="text-sm text-gray-600">Avg words/line</div>
             </div>
           </div>
-          
+
           <div className="mt-4 p-3 bg-white border border-black">
             <div className="text-sm text-gray-600 space-y-1">
-              <div>💡 <strong>Thời gian đọc</strong> được tính dựa trên tốc độ đọc trung bình 200 từ/phút</div>
-              <div>📖 <strong>Đoạn văn</strong> là số dòng có nội dung (không tính dòng trống)</div>
-              <div>⚡ <strong>Thống kê</strong> được cập nhật tự động khi bạn chỉnh sửa văn bản</div>
+              <div>💡 <strong>Reading time</strong> is calculated based on an average reading speed of 200 words/minute</div>
+              <div>📖 <strong>Paragraphs</strong> are the number of lines with content (excluding empty lines)</div>
+              <div>⚡ <strong>Statistics</strong> are automatically updated when you edit text</div>
             </div>
           </div>
         </div>
@@ -912,19 +911,19 @@ export const TextareaQuicknote = () => {
         onChange={editTextNotes}
         spellCheck="true"
         value={selectedTab?.notes ?? ""}
-        placeholder="Nhập nội dung"
+        placeholder="Enter content"
         rows={20}
         className="w-full outline-none border min-h-250 border-black p-3 min-h-fit text-xl text-mono"
       />
 
       <div className="flex justify-between items-center">
-        <span>Thay đổi lần cuối lúc: {selectedTab?.date}</span>
+        <span>Last modified: {selectedTab?.date}</span>
         <div className="flex items-center space-x-4 text-sm text-gray-600">
-          <span>{textStats.words} từ</span>
-          <span>{textStats.characters} ký tự</span>
-          <span>{textStats.lines} dòng</span>
+          <span>{textStats.words} words</span>
+          <span>{textStats.characters} chars</span>
+          <span>{textStats.lines} lines</span>
           {textStats.readingTime > 0 && (
-            <span>~{textStats.readingTime} phút đọc</span>
+            <span>~{textStats.readingTime} min read</span>
           )}
         </div>
       </div>

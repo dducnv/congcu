@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Quick Note - Online Notepad & Text Editor | MultiTools',
-  description: 'Free online notepad and text editor. Take quick notes, write text, and save your thoughts instantly. No registration required. Works in your browser.',
+  description: 'Free online notepad and text editor with advanced features. Take quick notes, write text, format documents (uppercase, lowercase, title case, sentence case), search & replace, word statistics, auto-save, backup & restore, file import/export (TXT, MD, HTML), multiple tabs, and save your thoughts instantly. No registration required. Works in your browser.',
   keywords: [
     'quick note',
     'online notepad',
@@ -24,7 +24,14 @@ export const metadata: Metadata = {
     'writing pad',
     'text area',
     'note tool',
-    'text utility'
+    'text utility',
+    'text formatting',
+    'search & replace',
+    'word statistics',
+    'auto-save',
+    'backup & restore',
+    'file import/export',
+    'multiple tabs'
   ],
   authors: [{ name: 'MultiTools' }],
   creator: 'MultiTools',
@@ -43,9 +50,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/quicknote',
+    url: 'https://tools4u.vercel.app/quicknote',
     title: 'Quick Note - Online Notepad & Text Editor',
-    description: 'Free online notepad and text editor. Take quick notes, write text, and save your thoughts instantly. No registration required.',
+    description: 'Free online notepad and text editor with advanced features. Take quick notes, write text, format documents (uppercase, lowercase, title case, sentence case), search & replace, word statistics, auto-save, backup & restore, file import/export (TXT, MD, HTML), multiple tabs, and save your thoughts instantly. No registration required.',
     siteName: 'MultiTools',
     images: [
       {
@@ -59,10 +66,10 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Quick Note - Online Notepad & Text Editor',
-    description: 'Free online notepad and text editor. Take quick notes, write text, and save your thoughts instantly. No registration required.',
+    description: 'Free online notepad and text editor with advanced features. Take quick notes, write text, format documents (uppercase, lowercase, title case, sentence case), search & replace, word statistics, auto-save, backup & restore, file import/export (TXT, MD, HTML), multiple tabs, and save your thoughts instantly. No registration required.',
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/quicknote',
+    canonical: 'https://tools4u.vercel.app/quicknote',
   },
   category: 'technology',
   classification: 'Developer Tools',

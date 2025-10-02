@@ -1,8 +1,8 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://congcu4u.vercel.app'
-  
+  const baseUrl = 'https://tools4u.vercel.app'
+
   // Use a fixed date to avoid constant changes
   const lastModified = new Date('2025-10-02')
 

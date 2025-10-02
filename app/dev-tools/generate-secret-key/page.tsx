@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/dev-tools/generate-secret-key',
+    url: 'https://tools4u.vercel.app/dev-tools/generate-secret-key',
     title: 'Secret Key Generator - Generate Secure Keys Online',
     description: 'Free secure key generator. Generate random secret keys, API keys, passwords, and tokens. Perfect for developers and security purposes.',
     siteName: 'MultiTools',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     images: ['/og-secret-key-generator.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/dev-tools/generate-secret-key',
+    canonical: 'https://tools4u.vercel.app/dev-tools/generate-secret-key',
   },
   category: 'technology',
   classification: 'Developer Tools',

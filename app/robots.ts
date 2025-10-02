@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/_next/', '/admin/'],
       },
     ],
-    sitemap: 'https://congcu4u.vercel.app/sitemap.xml',
+    sitemap: 'https://tools4u.vercel.app/sitemap.xml',
   }
 }

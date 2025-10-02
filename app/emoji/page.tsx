@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/emoji',
+    url: 'https://tools4u.vercel.app/emoji',
     title: 'Emoji Picker - Copy & Paste Emojis Online',
     description: 'Free emoji picker tool. Copy and paste emojis easily. Find the perfect emoji for your messages, social media posts, and documents.',
     siteName: 'MultiTools',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     images: ['/og-emoji-picker.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/emoji',
+    canonical: 'https://tools4u.vercel.app/emoji',
   },
   category: 'technology',
   classification: 'Developer Tools',

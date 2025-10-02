@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/dev-tools/color-converter',
+    url: 'https://tools4u.vercel.app/dev-tools/color-converter',
     title: 'Color Converter - Convert HEX, RGB, HSL Colors',
     description: 'Free color converter tool. Convert between HEX, RGB, HSL, and other color formats. Perfect for designers and developers.',
     siteName: 'MultiTools',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     images: ['/og-color-converter.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/dev-tools/color-converter',
+    canonical: 'https://tools4u.vercel.app/dev-tools/color-converter',
   },
   category: 'technology',
   classification: 'Developer Tools',

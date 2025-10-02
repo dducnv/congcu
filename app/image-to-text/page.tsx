@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/image-to-text',
+    url: 'https://tools4u.vercel.app/image-to-text',
     title: 'Image to Text Converter - Extract Text from Images Online',
     description: 'Free OCR tool to extract text from images. Convert JPG, PNG, PDF images to text online. No registration required.',
     siteName: 'MultiTools',
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     images: ['/og-image-to-text.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/image-to-text',
+    canonical: 'https://tools4u.vercel.app/image-to-text',
   },
   category: 'technology',
   classification: 'Developer Tools',

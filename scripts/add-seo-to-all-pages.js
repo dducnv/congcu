@@ -276,7 +276,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app${filePath}',
+    url: 'https://tools4u.vercel.app${filePath}',
     title: '${template.title}',
     description: '${template.description}',
     siteName: 'MultiTools',
@@ -296,7 +296,7 @@ export const metadata: Metadata = {
     images: ['/og-${toolType.replace("/", "-")}.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app${filePath}',
+    canonical: 'https://tools4u.vercel.app${filePath}',
   },
   category: 'technology',
   classification: 'Developer Tools',

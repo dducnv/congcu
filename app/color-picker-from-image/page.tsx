@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://congcu4u.vercel.app/color-picker-from-image',
+    url: 'https://tools4u.vercel.app/color-picker-from-image',
     title: 'Color Picker from Image - Extract Colors from Photos',
     description: 'Free color picker tool to extract colors from images. Get hex, RGB, HSL color codes from any image. Perfect for designers and developers.',
     siteName: 'MultiTools',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     images: ['/og-color-picker.png'],
   },
   alternates: {
-    canonical: 'https://congcu4u.vercel.app/color-picker-from-image',
+    canonical: 'https://tools4u.vercel.app/color-picker-from-image',
   },
   category: 'technology',
   classification: 'Developer Tools',
