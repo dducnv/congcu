@@ -7,6 +7,7 @@ const nextConfig = {
         RM_BG_API_KEY:process.env.RM_BG_API_KEY,
         REDIS_URL: process.env.REDIS_URL,
         REDIS_SECRET: process.env.REDIS_SECRET,
+        NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
     }
 };
 

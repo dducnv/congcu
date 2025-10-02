@@ -1,0 +1,1 @@
+export { default as GoogleAnalytics, pageview, event } from './google_analytics'

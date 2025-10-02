@@ -1,4 +1,4 @@
-import { Siderbar } from "@/components";
+import { Siderbar, GoogleAnalytics } from "@/components";
 import type { Metadata } from "next";
 
 import 'react-image-crop/dist/ReactCrop.css';
@@ -87,6 +87,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <GoogleAnalytics />
+      </head>
       <body className="h-screen overflow-hidden">
         <div className="flex h-full">
           <Siderbar />
