@@ -457,15 +457,15 @@ export const TextareaQuicknote = () => {
     }
 
     const formattedText = selectedTab.notes
-      // Loại bỏ nhiều khoảng trắng liên tiếp thành 1 khoảng trắng
+      // Remove multiple consecutive spaces to single space
       .replace(/[ \t]+/g, ' ')
-      // Loại bỏ khoảng trắng ở đầu và cuối mỗi dòng
+      // Remove whitespace at beginning and end of each line
       .split('\n')
       .map(line => line.trim())
       .join('\n')
-      // Loại bỏ nhiều dòng trống liên tiếp thành 1 dòng trống
+      // Remove multiple consecutive empty lines to single empty line
       .replace(/\n\s*\n\s*\n/g, '\n\n')
-      // Loại bỏ khoảng trắng ở đầu và cuối toàn bộ văn bản
+      // Remove whitespace at beginning and end of entire text
       .trim();
 
     updateTextContent(formattedText);
