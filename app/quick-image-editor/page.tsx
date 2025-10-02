@@ -1,6 +1,11 @@
 
-import { ImageEditorComponent } from "@/components/page_components/image_editor";
 import { Metadata } from 'next';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the component to avoid SSR issues with toast-ui image editor
+const ImageEditorComponent = dynamic(() => import("@/components/page_components/image_editor").then(mod => ({ default: mod.ImageEditorComponent })), {
+  ssr: false,
+});
 
 export const metadata: Metadata = {
   title: 'Quick Image Editor - Edit Images Online | MultiTools',

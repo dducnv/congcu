@@ -1,5 +1,10 @@
-import ImageToTextPage from "@/components/image_to_text/image_to_text";
 import { Metadata } from 'next';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the component to avoid SSR issues with tesseract.js
+const ImageToTextPage = dynamic(() => import("@/components/image_to_text/image_to_text"), {
+  ssr: false,
+});
 
 export const metadata: Metadata = {
   title: 'Image to Text Converter - Extract Text from Images Online | MultiTools',
