@@ -1,11 +1,11 @@
 'use client'
 
-import Script from 'next/script'
 import { usePathname, useSearchParams } from 'next/navigation'
+import Script from 'next/script'
 import { useEffect } from 'react'
 
 // Replace with your actual Google Analytics 4 Measurement ID
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX'
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-QTR47950E6'
 
 interface GoogleAnalyticsProps {
   measurementId?: string

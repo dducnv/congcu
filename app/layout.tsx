@@ -1,4 +1,4 @@
-import { Siderbar, GoogleAnalytics } from "@/components";
+import { GoogleAnalytics, Siderbar } from "@/components";
 import type { Metadata } from "next";
 
 import 'react-image-crop/dist/ReactCrop.css';
