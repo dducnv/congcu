@@ -2,7 +2,7 @@
 
 import { usePathname, useSearchParams } from 'next/navigation'
 import Script from 'next/script'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 
 // Replace with your actual Google Analytics 4 Measurement ID
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-QTR47950E6'
@@ -46,7 +46,7 @@ export const event = (
   }
 }
 
-const GoogleAnalytics = ({ measurementId = GA_MEASUREMENT_ID }: GoogleAnalyticsProps) => {
+const GoogleAnalyticsInner = ({ measurementId = GA_MEASUREMENT_ID }: GoogleAnalyticsProps) => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -79,6 +79,14 @@ const GoogleAnalytics = ({ measurementId = GA_MEASUREMENT_ID }: GoogleAnalyticsP
         `}
       </Script>
     </>
+  )
+}
+
+const GoogleAnalytics = (props: GoogleAnalyticsProps) => {
+  return (
+    <Suspense fallback={null}>
+      <GoogleAnalyticsInner {...props} />
+    </Suspense>
   )
 }
 
