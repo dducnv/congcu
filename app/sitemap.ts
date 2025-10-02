@@ -2,76 +2,79 @@ import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://congcu4u.vercel.app'
+  
+  // Use a fixed date to avoid constant changes
+  const lastModified = new Date('2025-10-02')
 
   return [
     // Homepage
     {
       url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
+      lastModified,
+      changeFrequency: 'weekly',
+      priority: 1.0,
     },
 
-    // Chuyển đổi (Conversion Tools)
+    // Conversion Tools
     {
       url: `${baseUrl}/image-to-text`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
+      lastModified,
+      changeFrequency: 'monthly',
       priority: 0.9,
     },
 
-    // Công cụ (Tools)
+    // Tools
     {
       url: `${baseUrl}/quicknote`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
+      lastModified,
+      changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${baseUrl}/emoji`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
+      lastModified,
+      changeFrequency: 'yearly',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/percentity`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/color-picker-from-image`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
+      lastModified,
+      changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${baseUrl}/quick-image-editor`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
+      lastModified,
+      changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${baseUrl}/draw`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/file-converter`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
+      lastModified,
+      changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${baseUrl}/remove-bg`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.9,
     },
     {
       url: `${baseUrl}/currency-exchange`,
-      lastModified: new Date(),
+      lastModified,
       changeFrequency: 'weekly',
       priority: 0.8,
     },
@@ -79,35 +82,35 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Developer Tools
     {
       url: `${baseUrl}/dev-tools/read-json`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/dev-tools/generate-secret-key`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/dev-tools/color-converter`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/dev-tools/csv-viewer`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.6,
     },
 
     // About page
     {
       url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
+      lastModified,
+      changeFrequency: 'yearly',
+      priority: 0.3,
     },
   ]
 }
