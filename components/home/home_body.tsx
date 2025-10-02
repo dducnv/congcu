@@ -16,7 +16,7 @@ export default function HomeBody() {
           <input
             onChange={(value) => handleSearch(value.target.value)}
             className="border text-mono border-black w-full py-5 text-3xl px-6 max-w-4xl m-auto outline-none rounded-full shadow-blog-l"
-            placeholder="Nhập từ khóa để tìm kiếm công cụ..."
+            placeholder="Enter keyword to search..."
           />
         </div>
         <div className="my-16 ld:my-20">
