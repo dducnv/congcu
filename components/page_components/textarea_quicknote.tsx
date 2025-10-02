@@ -313,7 +313,7 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    // Chuyển đổi văn bản nhiều dòng thành một đoạn văn thẳng
+    // Convert multi-line text into a single paragraph
     const formattedText = selectedTab.notes
       .split('\n')
       .map(line => line.trim())
