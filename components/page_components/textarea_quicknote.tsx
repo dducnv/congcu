@@ -732,7 +732,7 @@ export const TextareaQuicknote = () => {
       const removePattern = /^(\d+\.\s*|[a-z]\.\s*|[A-Z]\.\s*|•\s*|-\s*|\+\s*|\*\s*|→\s*|\t+|\s+)/;
       const cleanedLine = trimmedLine.replace(removePattern, '');
 
-      return `${index + 1}. ${cleanedLine}`;
+      return ` ${index + 1}. ${cleanedLine}`;
     });
 
     const formattedText = formattedLines.join('\n');
