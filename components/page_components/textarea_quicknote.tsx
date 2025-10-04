@@ -31,10 +31,6 @@ export const TextareaQuicknote = () => {
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [showStats, setShowStats] = useState(false);
-  const [keepSelection, setKeepSelection] = useState(false);
-  const [savedSelection, setSavedSelection] = useState<{ start: number, end: number } | null>(null);
-  const [savedScrollPosition, setSavedScrollPosition] = useState<number>(0);
-  const [shouldRestoreScroll, setShouldRestoreScroll] = useState<boolean>(false);
 
   const dateTimeNow = new Date().toLocaleString();
 
@@ -349,47 +345,6 @@ export const TextareaQuicknote = () => {
     localStorage.setItem("textNotesList", JSON.stringify(newTabList));
   }, [textNotesList, selectedTab?.id]);
 
-  // Function to save current selection and scroll position
-  const saveSelection = useCallback(() => {
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      if (start !== end) {
-        setSavedSelection({ start, end });
-      }
-      // Save scroll position
-      setSavedScrollPosition(textarea.scrollTop);
-    }
-  }, []);
-
-  // Function to restore selection and scroll position
-  const restoreSelection = useCallback(() => {
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
-    if (textarea) {
-      // Restore scroll position immediately
-      textarea.scrollTop = savedScrollPosition;
-
-      // Use setTimeout to ensure the textarea is updated for selection
-      setTimeout(() => {
-        // Restore selection if keepSelection is enabled
-        if (savedSelection && keepSelection) {
-          textarea.focus();
-          textarea.setSelectionRange(savedSelection.start, savedSelection.end);
-        }
-      }, 10);
-    }
-  }, [savedSelection, keepSelection, savedScrollPosition]);
-
-  // Helper function to apply formatting with selection preservation
-  const applyFormatting = useCallback((formatFunction: () => void) => {
-    saveSelection();
-    formatFunction();
-    // Restore selection and scroll position after formatting
-    setTimeout(() => {
-      restoreSelection();
-    }, 100);
-  }, [saveSelection, restoreSelection]);
 
   function formatToParagraph() {
     if (!selectedTab || !selectedTab.notes) {
@@ -399,9 +354,6 @@ export const TextareaQuicknote = () => {
 
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
     if (!textarea) return;
-
-    // Save selection before formatting
-    saveSelection();
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
@@ -949,29 +901,6 @@ export const TextareaQuicknote = () => {
     };
   }, [showSearchReplace, addTabToSelectedLines, addSpaceToSelectedLines, addBulletToSelectedLines, addDashToSelectedLines, addPlusToSelectedLines, addAsteriskToSelectedLines, addNumberToSelectedLines]);
 
-  // Effect to restore scroll position when needed
-  useEffect(() => {
-    if (shouldRestoreScroll) {
-      const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
-      if (textarea) {
-        // Multiple attempts to restore scroll position
-        const restoreScroll = () => {
-          textarea.scrollTop = savedScrollPosition;
-        };
-
-        // Immediate restoration
-        restoreScroll();
-
-        // Use requestAnimationFrame for next frame
-        requestAnimationFrame(restoreScroll);
-
-        // Use setTimeout as fallback
-        setTimeout(restoreScroll, 50);
-
-        setShouldRestoreScroll(false);
-      }
-    }
-  }, [shouldRestoreScroll, savedScrollPosition]);
 
   // Function to calculate text statistics
   function calculateTextStats() {
@@ -1236,74 +1165,61 @@ export const TextareaQuicknote = () => {
 
       {/* Format buttons */}
       <div className="mb-3 p-3 bg-gray-50 border border-gray-300 rounded">
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-sm font-semibold text-gray-700">Format Tools:</div>
-          <div className="flex items-center space-x-2">
-            <label className="flex items-center space-x-1 text-xs text-gray-600">
-              <input
-                type="checkbox"
-                checked={keepSelection}
-                onChange={(e) => setKeepSelection(e.target.checked)}
-                className="rounded"
-              />
-              <span>Keep Selection</span>
-            </label>
-          </div>
-        </div>
+        <div className="text-sm font-semibold text-gray-700 mb-2">Format Tools:</div>
         <div className="flex flex-wrap gap-2">
           {/* Text formatting buttons */}
           <div className="flex flex-wrap gap-1 mr-4">
             <button
-              onClick={() => applyFormatting(formatToParagraph)}
+              onClick={formatToParagraph}
               className="px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 border border-blue-300 rounded"
               title="Convert to Paragraph (selected text or all text)"
             >
               Paragraph
             </button>
             <button
-              onClick={() => applyFormatting(formatToUpperCase)}
+              onClick={formatToUpperCase}
               className="px-3 py-1 text-xs bg-green-100 hover:bg-green-200 border border-green-300 rounded"
               title="UPPERCASE (selected text or all text)"
             >
               UPPER
             </button>
             <button
-              onClick={() => applyFormatting(formatToLowerCase)}
+              onClick={formatToLowerCase}
               className="px-3 py-1 text-xs bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 rounded"
               title="lowercase (selected text or all text)"
             >
               lower
             </button>
             <button
-              onClick={() => applyFormatting(formatToTitleCase)}
+              onClick={formatToTitleCase}
               className="px-3 py-1 text-xs bg-purple-100 hover:bg-purple-200 border border-purple-300 rounded"
               title="Title Case Each Word (selected text or all text)"
             >
               Title
             </button>
             <button
-              onClick={() => applyFormatting(formatToSentenceCase)}
+              onClick={formatToSentenceCase}
               className="px-3 py-1 text-xs bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 rounded"
               title="Sentence case (selected text or all text)"
             >
               Sentence
             </button>
             <button
-              onClick={() => applyFormatting(formatCapitalizeLines)}
+              onClick={formatCapitalizeLines}
               className="px-3 py-1 text-xs bg-pink-100 hover:bg-pink-200 border border-pink-300 rounded"
               title="Capitalize each line (selected text or all text)"
             >
               Cap Lines
             </button>
             <button
-              onClick={() => applyFormatting(formatRemoveExtraSpaces)}
+              onClick={formatRemoveExtraSpaces}
               className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 border border-red-300 rounded"
               title="Remove extra spaces (selected text or all text)"
             >
               Clean
             </button>
             <button
-              onClick={() => applyFormatting(formatRemoveSpacing)}
+              onClick={formatRemoveSpacing}
               className="px-3 py-1 text-xs bg-orange-100 hover:bg-orange-200 border border-orange-300 rounded"
               title="Remove spacing between paragraphs (selected text or all text)"
             >
@@ -1314,49 +1230,49 @@ export const TextareaQuicknote = () => {
           {/* Line formatting buttons */}
           <div className="flex flex-wrap gap-1">
             <button
-              onClick={() => applyFormatting(addTabToSelectedLines)}
+              onClick={addTabToSelectedLines}
               className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded"
               title="Add Tab to selected lines (Ctrl+Shift+T)"
             >
               → Tab
             </button>
             <button
-              onClick={() => applyFormatting(addSpaceToSelectedLines)}
+              onClick={addSpaceToSelectedLines}
               className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded"
               title="Add Space to selected lines (Ctrl+Shift+S)"
             >
               → Space
             </button>
             <button
-              onClick={() => applyFormatting(addBulletToSelectedLines)}
+              onClick={addBulletToSelectedLines}
               className="px-3 py-1 text-xs bg-orange-100 hover:bg-orange-200 border border-orange-300 rounded"
               title="Add Bullet to selected lines (Ctrl+Shift+B)"
             >
               • Bullet
             </button>
             <button
-              onClick={() => applyFormatting(addDashToSelectedLines)}
+              onClick={addDashToSelectedLines}
               className="px-3 py-1 text-xs bg-teal-100 hover:bg-teal-200 border border-teal-300 rounded"
               title="Add Dash to selected lines (Ctrl+Shift+D)"
             >
               - Dash
             </button>
             <button
-              onClick={() => applyFormatting(addPlusToSelectedLines)}
+              onClick={addPlusToSelectedLines}
               className="px-3 py-1 text-xs bg-cyan-100 hover:bg-cyan-200 border border-cyan-300 rounded"
               title="Add Plus to selected lines (Ctrl+Shift+P)"
             >
               + Plus
             </button>
             <button
-              onClick={() => applyFormatting(addAsteriskToSelectedLines)}
+              onClick={addAsteriskToSelectedLines}
               className="px-3 py-1 text-xs bg-lime-100 hover:bg-lime-200 border border-lime-300 rounded"
               title="Add Asterisk to selected lines (Ctrl+Shift+A)"
             >
               * Star
             </button>
             <button
-              onClick={() => applyFormatting(addNumberToSelectedLines)}
+              onClick={addNumberToSelectedLines}
               className="px-3 py-1 text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded"
               title="Add Numbers to selected lines (Ctrl+Shift+N)"
             >
