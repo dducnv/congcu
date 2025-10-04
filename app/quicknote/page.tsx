@@ -1,4 +1,4 @@
-import { Container, TextareaQuicknote, TitlePage } from "@/components";
+import { Container, TextareaQuicknote } from "@/components";
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -84,12 +84,10 @@ export const metadata: Metadata = {
 const page = () => {
   return (
     <>
-      <div className="h-20"></div>
-      <TitlePage>Notes</TitlePage>
+      <div className="h-16"></div>
       <Container width="max-w-6xl" className="p-3">
         <TextareaQuicknote />
       </Container>
-      <div className="h-20"></div>
     </>
   );
 };

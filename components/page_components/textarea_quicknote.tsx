@@ -1,8 +1,8 @@
 "use client";
 
 import { decryptData, encryptData } from "@/core/utils";
-import { ChevronDownIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
-import { useEffect, useState } from "react";
+import { PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { useCallback, useEffect, useState } from "react";
 import { uid } from "uid";
 
 type TextareaQuicknoteItem = {
@@ -25,13 +25,16 @@ export const TextareaQuicknote = () => {
     []
   );
 
-  const [showFormatDropdown, setShowFormatDropdown] = useState(false);
   const [showSearchReplace, setShowSearchReplace] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [replaceTerm, setReplaceTerm] = useState("");
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [showStats, setShowStats] = useState(false);
+  const [keepSelection, setKeepSelection] = useState(false);
+  const [savedSelection, setSavedSelection] = useState<{ start: number, end: number } | null>(null);
+  const [savedScrollPosition, setSavedScrollPosition] = useState<number>(0);
+  const [shouldRestoreScroll, setShouldRestoreScroll] = useState<boolean>(false);
 
   const dateTimeNow = new Date().toLocaleString();
 
@@ -174,19 +177,6 @@ export const TextareaQuicknote = () => {
     }
   }, [deleteTabIndex, selectedTab, textNotesList]);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.format-dropdown')) {
-        setShowFormatDropdown(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // ...
 
@@ -339,7 +329,7 @@ export const TextareaQuicknote = () => {
     localStorage.setItem("textNotesList", JSON.stringify(newTabList));
   }
 
-  function updateTextContent(newText: string) {
+  const updateTextContent = useCallback((newText: string) => {
     const newTabList = textNotesList.map((item) => {
       if (item.id === selectedTab?.id) {
         return {
@@ -357,7 +347,49 @@ export const TextareaQuicknote = () => {
       ) as TextareaQuicknoteItem
     );
     localStorage.setItem("textNotesList", JSON.stringify(newTabList));
-  }
+  }, [textNotesList, selectedTab?.id]);
+
+  // Function to save current selection and scroll position
+  const saveSelection = useCallback(() => {
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      if (start !== end) {
+        setSavedSelection({ start, end });
+      }
+      // Save scroll position
+      setSavedScrollPosition(textarea.scrollTop);
+    }
+  }, []);
+
+  // Function to restore selection and scroll position
+  const restoreSelection = useCallback(() => {
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (textarea) {
+      // Restore scroll position immediately
+      textarea.scrollTop = savedScrollPosition;
+
+      // Use setTimeout to ensure the textarea is updated for selection
+      setTimeout(() => {
+        // Restore selection if keepSelection is enabled
+        if (savedSelection && keepSelection) {
+          textarea.focus();
+          textarea.setSelectionRange(savedSelection.start, savedSelection.end);
+        }
+      }, 10);
+    }
+  }, [savedSelection, keepSelection, savedScrollPosition]);
+
+  // Helper function to apply formatting with selection preservation
+  const applyFormatting = useCallback((formatFunction: () => void) => {
+    saveSelection();
+    formatFunction();
+    // Restore selection and scroll position after formatting
+    setTimeout(() => {
+      restoreSelection();
+    }, 100);
+  }, [saveSelection, restoreSelection]);
 
   function formatToParagraph() {
     if (!selectedTab || !selectedTab.notes) {
@@ -365,15 +397,36 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    // Convert multi-line text into a single paragraph
-    const formattedText = selectedTab.notes
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .join(' ');
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
 
-    updateTextContent(formattedText);
-    setShowFormatDropdown(false);
+    // Save selection before formatting
+    saveSelection();
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Nếu có văn bản được chọn, chỉ format phần được chọn
+    if (start !== end) {
+      const selectedText = selectedTab.notes.substring(start, end);
+      const formattedText = selectedText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join(' ');
+
+      const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+      updateTextContent(newText);
+    } else {
+      // Nếu không có văn bản được chọn, format toàn bộ
+      const formattedText = selectedTab.notes
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join(' ');
+
+      updateTextContent(formattedText);
+    }
   }
 
   function formatToUpperCase() {
@@ -382,9 +435,23 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const formattedText = selectedTab.notes.toUpperCase();
-    updateTextContent(formattedText);
-    setShowFormatDropdown(false);
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Nếu có văn bản được chọn, chỉ format phần được chọn
+    if (start !== end) {
+      const selectedText = selectedTab.notes.substring(start, end);
+      const formattedText = selectedText.toUpperCase();
+      const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+      updateTextContent(newText);
+    } else {
+      // Nếu không có văn bản được chọn, format toàn bộ
+      const formattedText = selectedTab.notes.toUpperCase();
+      updateTextContent(formattedText);
+    }
   }
 
   function formatToLowerCase() {
@@ -393,9 +460,23 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const formattedText = selectedTab.notes.toLowerCase();
-    updateTextContent(formattedText);
-    setShowFormatDropdown(false);
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Nếu có văn bản được chọn, chỉ format phần được chọn
+    if (start !== end) {
+      const selectedText = selectedTab.notes.substring(start, end);
+      const formattedText = selectedText.toLowerCase();
+      const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+      updateTextContent(newText);
+    } else {
+      // Nếu không có văn bản được chọn, format toàn bộ
+      const formattedText = selectedTab.notes.toLowerCase();
+      updateTextContent(formattedText);
+    }
   }
 
   function formatToTitleCase() {
@@ -404,17 +485,39 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const formattedText = selectedTab.notes
-      .toLowerCase()
-      .split(' ')
-      .map(word => {
-        if (word.length === 0) return word;
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      })
-      .join(' ');
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
 
-    updateTextContent(formattedText);
-    setShowFormatDropdown(false);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Nếu có văn bản được chọn, chỉ format phần được chọn
+    if (start !== end) {
+      const selectedText = selectedTab.notes.substring(start, end);
+      const formattedText = selectedText
+        .toLowerCase()
+        .split(' ')
+        .map(word => {
+          if (word.length === 0) return word;
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(' ');
+
+      const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+      updateTextContent(newText);
+    } else {
+      // Nếu không có văn bản được chọn, format toàn bộ
+      const formattedText = selectedTab.notes
+        .toLowerCase()
+        .split(' ')
+        .map(word => {
+          if (word.length === 0) return word;
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(' ');
+
+      updateTextContent(formattedText);
+    }
   }
 
   function formatToSentenceCase() {
@@ -423,12 +526,29 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const formattedText = selectedTab.notes
-      .toLowerCase()
-      .replace(/(^\w|\.\s+\w)/g, (char) => char.toUpperCase());
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
 
-    updateTextContent(formattedText);
-    setShowFormatDropdown(false);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Nếu có văn bản được chọn, chỉ format phần được chọn
+    if (start !== end) {
+      const selectedText = selectedTab.notes.substring(start, end);
+      const formattedText = selectedText
+        .toLowerCase()
+        .replace(/(^\w|\.\s+\w)/g, (char) => char.toUpperCase());
+
+      const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+      updateTextContent(newText);
+    } else {
+      // Nếu không có văn bản được chọn, format toàn bộ
+      const formattedText = selectedTab.notes
+        .toLowerCase()
+        .replace(/(^\w|\.\s+\w)/g, (char) => char.toUpperCase());
+
+      updateTextContent(formattedText);
+    }
   }
 
   function formatCapitalizeLines() {
@@ -437,17 +557,39 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const formattedText = selectedTab.notes
-      .split('\n')
-      .map(line => {
-        const trimmed = line.trim();
-        if (trimmed.length === 0) return line;
-        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
-      })
-      .join('\n');
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
 
-    updateTextContent(formattedText);
-    setShowFormatDropdown(false);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Nếu có văn bản được chọn, chỉ format phần được chọn
+    if (start !== end) {
+      const selectedText = selectedTab.notes.substring(start, end);
+      const formattedText = selectedText
+        .split('\n')
+        .map(line => {
+          const trimmed = line.trim();
+          if (trimmed.length === 0) return line;
+          return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+        })
+        .join('\n');
+
+      const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+      updateTextContent(newText);
+    } else {
+      // Nếu không có văn bản được chọn, format toàn bộ
+      const formattedText = selectedTab.notes
+        .split('\n')
+        .map(line => {
+          const trimmed = line.trim();
+          if (trimmed.length === 0) return line;
+          return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+        })
+        .join('\n');
+
+      updateTextContent(formattedText);
+    }
   }
 
   function formatRemoveExtraSpaces() {
@@ -456,23 +598,198 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const formattedText = selectedTab.notes
-      // Remove multiple consecutive spaces to single space
-      .replace(/[ \t]+/g, ' ')
-      // Remove whitespace at beginning and end of each line
-      .split('\n')
-      .map(line => line.trim())
-      .join('\n')
-      // Remove multiple consecutive empty lines to single empty line
-      .replace(/\n\s*\n\s*\n/g, '\n\n')
-      // Remove whitespace at beginning and end of entire text
-      .trim();
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
 
-    updateTextContent(formattedText);
-    setShowFormatDropdown(false);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Nếu có văn bản được chọn, chỉ format phần được chọn
+    if (start !== end) {
+      const selectedText = selectedTab.notes.substring(start, end);
+      const formattedText = selectedText
+        // Remove multiple consecutive spaces to single space
+        .replace(/[ \t]+/g, ' ')
+        // Remove whitespace at beginning and end of each line
+        .split('\n')
+        .map(line => line.trim())
+        .join('\n')
+        // Remove multiple consecutive empty lines to single empty line
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        // Remove whitespace at beginning and end of entire text
+        .trim();
+
+      const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+      updateTextContent(newText);
+    } else {
+      // Nếu không có văn bản được chọn, format toàn bộ
+      const formattedText = selectedTab.notes
+        // Remove multiple consecutive spaces to single space
+        .replace(/[ \t]+/g, ' ')
+        // Remove whitespace at beginning and end of each line
+        .split('\n')
+        .map(line => line.trim())
+        .join('\n')
+        // Remove multiple consecutive empty lines to single empty line
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        // Remove whitespace at beginning and end of entire text
+        .trim();
+
+      updateTextContent(formattedText);
+    }
   }
 
-  function searchInText() {
+  function formatRemoveSpacing() {
+    if (!selectedTab || !selectedTab.notes) {
+      alert("No content to format");
+      return;
+    }
+
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Nếu có văn bản được chọn, chỉ format phần được chọn
+    if (start !== end) {
+      const selectedText = selectedTab.notes.substring(start, end);
+      const formattedText = selectedText
+        // Loại bỏ tất cả khoảng trắng giữa các dòng (bao gồm dòng trống)
+        .replace(/\n\s*\n/g, '\n')
+        // Loại bỏ khoảng trắng đầu và cuối mỗi dòng
+        .split('\n')
+        .map(line => line.trim())
+        .join('\n')
+        // Loại bỏ khoảng trắng đầu và cuối toàn bộ
+        .trim();
+
+      const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+      updateTextContent(newText);
+    } else {
+      // Nếu không có văn bản được chọn, format toàn bộ
+      const formattedText = selectedTab.notes
+        // Loại bỏ tất cả khoảng trắng giữa các dòng (bao gồm dòng trống)
+        .replace(/\n\s*\n/g, '\n')
+        // Loại bỏ khoảng trắng đầu và cuối mỗi dòng
+        .split('\n')
+        .map(line => line.trim())
+        .join('\n')
+        // Loại bỏ khoảng trắng đầu và cuối toàn bộ
+        .trim();
+
+      updateTextContent(formattedText);
+    }
+  }
+
+  // New formatting functions for selected text
+  const formatSelectedText = useCallback((prefix: string) => {
+    if (!selectedTab?.notes) {
+      alert("No content to format");
+      return;
+    }
+
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    if (start === end) {
+      alert("Vui lòng tô đen văn bản trước khi format");
+      return;
+    }
+
+    const selectedText = selectedTab.notes.substring(start, end);
+    const lines = selectedText.split('\n');
+
+    const formattedLines = lines.map(line => {
+      if (line.trim() === '') return line; // Giữ nguyên dòng trống
+
+      // Loại bỏ ký tự đầu dòng không phải text/số (bao gồm số thứ tự, chữ cái thứ tự)
+      const trimmedLine = line.trim();
+
+      // Pattern để nhận diện các ký tự đầu dòng cần loại bỏ:
+      // - Số thứ tự: 1. 2. 3. 10. 100.
+      // - Chữ cái thứ tự: a. b. c. d.
+      // - Ký tự đặc biệt: • - + * → (tab, space)
+      const removePattern = /^(\d+\.\s*|[a-z]\.\s*|[A-Z]\.\s*|•\s*|-\s*|\+\s*|\*\s*|→\s*|\t+|\s+)/;
+
+      // Loại bỏ ký tự đầu dòng không mong muốn
+      const cleanedLine = trimmedLine.replace(removePattern, '');
+
+      // Thêm prefix mới
+      return prefix + cleanedLine;
+    });
+
+    const formattedText = formattedLines.join('\n');
+    const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+
+    updateTextContent(newText);
+  }, [selectedTab?.notes, updateTextContent]);
+
+  const addTabToSelectedLines = useCallback(() => {
+    formatSelectedText('\t');
+  }, [formatSelectedText]);
+
+  const addSpaceToSelectedLines = useCallback(() => {
+    formatSelectedText(' ');
+  }, [formatSelectedText]);
+
+  const addBulletToSelectedLines = useCallback(() => {
+    formatSelectedText(' • ');
+  }, [formatSelectedText]);
+
+  const addDashToSelectedLines = useCallback(() => {
+    formatSelectedText(' - ');
+  }, [formatSelectedText]);
+
+  const addPlusToSelectedLines = useCallback(() => {
+    formatSelectedText(' + ');
+  }, [formatSelectedText]);
+
+  const addAsteriskToSelectedLines = useCallback(() => {
+    formatSelectedText(' * ');
+  }, [formatSelectedText]);
+
+  const addNumberToSelectedLines = useCallback(() => {
+    if (!selectedTab?.notes) {
+      alert("No content to format");
+      return;
+    }
+
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    if (start === end) {
+      alert("Please select text before formatting");
+      return;
+    }
+
+    const selectedText = selectedTab.notes.substring(start, end);
+    const lines = selectedText.split('\n');
+
+    const formattedLines = lines.map((line, index) => {
+      if (line.trim() === '') return line; // Giữ nguyên dòng trống
+
+      // Loại bỏ ký tự đầu dòng không phải text/số
+      const trimmedLine = line.trim();
+      const removePattern = /^(\d+\.\s*|[a-z]\.\s*|[A-Z]\.\s*|•\s*|-\s*|\+\s*|\*\s*|→\s*|\t+|\s+)/;
+      const cleanedLine = trimmedLine.replace(removePattern, '');
+
+      return `${index + 1}. ${cleanedLine}`;
+    });
+
+    const formattedText = formattedLines.join('\n');
+    const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
+
+    updateTextContent(newText);
+  }, [selectedTab?.notes, updateTextContent]);
+
+  const searchInText = useCallback(() => {
     if (!searchTerm || !selectedTab?.notes) {
       setSearchResults([]);
       setCurrentSearchIndex(-1);
@@ -491,7 +808,7 @@ export const TextareaQuicknote = () => {
 
     setSearchResults(results);
     setCurrentSearchIndex(results.length > 0 ? 0 : -1);
-  }
+  }, [searchTerm, selectedTab?.notes]);
 
   function nextSearchResult() {
     if (searchResults.length === 0) return;
@@ -563,7 +880,7 @@ export const TextareaQuicknote = () => {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, selectedTab?.notes]);
+  }, [searchTerm, selectedTab?.notes, searchInText]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -582,13 +899,79 @@ export const TextareaQuicknote = () => {
       if (event.key === 'Escape' && showSearchReplace) {
         setShowSearchReplace(false);
       }
+
+      // Format shortcuts for selected text
+      if (event.ctrlKey && event.shiftKey) {
+        const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+        if (textarea && document.activeElement === textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+
+          if (start !== end) { // Có văn bản được chọn
+            switch (event.key) {
+              case 'T':
+                event.preventDefault();
+                addTabToSelectedLines();
+                break;
+              case 'S':
+                event.preventDefault();
+                addSpaceToSelectedLines();
+                break;
+              case 'B':
+                event.preventDefault();
+                addBulletToSelectedLines();
+                break;
+              case 'D':
+                event.preventDefault();
+                addDashToSelectedLines();
+                break;
+              case 'P':
+                event.preventDefault();
+                addPlusToSelectedLines();
+                break;
+              case 'A':
+                event.preventDefault();
+                addAsteriskToSelectedLines();
+                break;
+              case 'N':
+                event.preventDefault();
+                addNumberToSelectedLines();
+                break;
+            }
+          }
+        }
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [showSearchReplace]);
+  }, [showSearchReplace, addTabToSelectedLines, addSpaceToSelectedLines, addBulletToSelectedLines, addDashToSelectedLines, addPlusToSelectedLines, addAsteriskToSelectedLines, addNumberToSelectedLines]);
+
+  // Effect to restore scroll position when needed
+  useEffect(() => {
+    if (shouldRestoreScroll) {
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+      if (textarea) {
+        // Multiple attempts to restore scroll position
+        const restoreScroll = () => {
+          textarea.scrollTop = savedScrollPosition;
+        };
+
+        // Immediate restoration
+        restoreScroll();
+
+        // Use requestAnimationFrame for next frame
+        requestAnimationFrame(restoreScroll);
+
+        // Use setTimeout as fallback
+        setTimeout(restoreScroll, 50);
+
+        setShouldRestoreScroll(false);
+      }
+    }
+  }, [shouldRestoreScroll, savedScrollPosition]);
 
   // Function to calculate text statistics
   function calculateTextStats() {
@@ -654,62 +1037,6 @@ export const TextareaQuicknote = () => {
           >
             Import File
           </a>
-          <div className="relative format-dropdown">
-            <a
-              onClick={() => setShowFormatDropdown(!showFormatDropdown)}
-              className="hover:underline hover:cursor-pointer flex items-center space-x-1"
-            >
-              Format <ChevronDownIcon className="w-4 h-4" />
-            </a>
-            {showFormatDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-black z-10 min-w-48">
-                <div className="py-1">
-                  <a
-                    onClick={formatToParagraph}
-                    className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                  >
-                    Convert to Paragraph
-                  </a>
-                  <a
-                    onClick={formatToUpperCase}
-                    className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                  >
-                    UPPERCASE ALL
-                  </a>
-                  <a
-                    onClick={formatToLowerCase}
-                    className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                  >
-                    lowercase all
-                  </a>
-                  <a
-                    onClick={formatToTitleCase}
-                    className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                  >
-                    Title Case Each Word
-                  </a>
-                  <a
-                    onClick={formatToSentenceCase}
-                    className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                  >
-                    Sentence case
-                  </a>
-                  <a
-                    onClick={formatCapitalizeLines}
-                    className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                  >
-                    Capitalize each line
-                  </a>
-                  <a
-                    onClick={formatRemoveExtraSpaces}
-                    className="block px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                  >
-                    Remove extra spaces
-                  </a>
-                </div>
-              </div>
-            )}
-          </div>
           <a
             onClick={() => setShowSearchReplace(!showSearchReplace)}
             className="hover:underline hover:cursor-pointer"
@@ -907,13 +1234,146 @@ export const TextareaQuicknote = () => {
         </div>
       )}
 
+      {/* Format buttons */}
+      <div className="mb-3 p-3 bg-gray-50 border border-gray-300 rounded">
+        <div className="flex justify-between items-center mb-2">
+          <div className="text-sm font-semibold text-gray-700">Format Tools:</div>
+          <div className="flex items-center space-x-2">
+            <label className="flex items-center space-x-1 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={keepSelection}
+                onChange={(e) => setKeepSelection(e.target.checked)}
+                className="rounded"
+              />
+              <span>Keep Selection</span>
+            </label>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {/* Text formatting buttons */}
+          <div className="flex flex-wrap gap-1 mr-4">
+            <button
+              onClick={() => applyFormatting(formatToParagraph)}
+              className="px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 border border-blue-300 rounded"
+              title="Convert to Paragraph (selected text or all text)"
+            >
+              Paragraph
+            </button>
+            <button
+              onClick={() => applyFormatting(formatToUpperCase)}
+              className="px-3 py-1 text-xs bg-green-100 hover:bg-green-200 border border-green-300 rounded"
+              title="UPPERCASE (selected text or all text)"
+            >
+              UPPER
+            </button>
+            <button
+              onClick={() => applyFormatting(formatToLowerCase)}
+              className="px-3 py-1 text-xs bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 rounded"
+              title="lowercase (selected text or all text)"
+            >
+              lower
+            </button>
+            <button
+              onClick={() => applyFormatting(formatToTitleCase)}
+              className="px-3 py-1 text-xs bg-purple-100 hover:bg-purple-200 border border-purple-300 rounded"
+              title="Title Case Each Word (selected text or all text)"
+            >
+              Title
+            </button>
+            <button
+              onClick={() => applyFormatting(formatToSentenceCase)}
+              className="px-3 py-1 text-xs bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 rounded"
+              title="Sentence case (selected text or all text)"
+            >
+              Sentence
+            </button>
+            <button
+              onClick={() => applyFormatting(formatCapitalizeLines)}
+              className="px-3 py-1 text-xs bg-pink-100 hover:bg-pink-200 border border-pink-300 rounded"
+              title="Capitalize each line (selected text or all text)"
+            >
+              Cap Lines
+            </button>
+            <button
+              onClick={() => applyFormatting(formatRemoveExtraSpaces)}
+              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 border border-red-300 rounded"
+              title="Remove extra spaces (selected text or all text)"
+            >
+              Clean
+            </button>
+            <button
+              onClick={() => applyFormatting(formatRemoveSpacing)}
+              className="px-3 py-1 text-xs bg-orange-100 hover:bg-orange-200 border border-orange-300 rounded"
+              title="Remove spacing between paragraphs (selected text or all text)"
+            >
+              No Spacing
+            </button>
+          </div>
+
+          {/* Line formatting buttons */}
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => applyFormatting(addTabToSelectedLines)}
+              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded"
+              title="Add Tab to selected lines (Ctrl+Shift+T)"
+            >
+              → Tab
+            </button>
+            <button
+              onClick={() => applyFormatting(addSpaceToSelectedLines)}
+              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded"
+              title="Add Space to selected lines (Ctrl+Shift+S)"
+            >
+              → Space
+            </button>
+            <button
+              onClick={() => applyFormatting(addBulletToSelectedLines)}
+              className="px-3 py-1 text-xs bg-orange-100 hover:bg-orange-200 border border-orange-300 rounded"
+              title="Add Bullet to selected lines (Ctrl+Shift+B)"
+            >
+              • Bullet
+            </button>
+            <button
+              onClick={() => applyFormatting(addDashToSelectedLines)}
+              className="px-3 py-1 text-xs bg-teal-100 hover:bg-teal-200 border border-teal-300 rounded"
+              title="Add Dash to selected lines (Ctrl+Shift+D)"
+            >
+              - Dash
+            </button>
+            <button
+              onClick={() => applyFormatting(addPlusToSelectedLines)}
+              className="px-3 py-1 text-xs bg-cyan-100 hover:bg-cyan-200 border border-cyan-300 rounded"
+              title="Add Plus to selected lines (Ctrl+Shift+P)"
+            >
+              + Plus
+            </button>
+            <button
+              onClick={() => applyFormatting(addAsteriskToSelectedLines)}
+              className="px-3 py-1 text-xs bg-lime-100 hover:bg-lime-200 border border-lime-300 rounded"
+              title="Add Asterisk to selected lines (Ctrl+Shift+A)"
+            >
+              * Star
+            </button>
+            <button
+              onClick={() => applyFormatting(addNumberToSelectedLines)}
+              className="px-3 py-1 text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded"
+              title="Add Numbers to selected lines (Ctrl+Shift+N)"
+            >
+              1. Numbers
+            </button>
+          </div>
+        </div>
+
+      </div>
+
       <textarea
         onChange={editTextNotes}
         spellCheck="true"
         value={selectedTab?.notes ?? ""}
         placeholder="Enter content"
-        rows={20}
-        className="w-full outline-none border min-h-250 border-black p-3 min-h-fit text-xl text-mono"
+        rows={15}
+        className="w-full outline-none border min-h-100 border-black p-3 min-h-fit text-xl text-mono"
       />
 
       <div className="flex justify-between items-center">
