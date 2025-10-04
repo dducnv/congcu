@@ -1,6 +1,7 @@
 import { GoogleAnalytics, Siderbar } from "@/components";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
-
 import 'react-image-crop/dist/ReactCrop.css';
 import 'tldraw/tldraw.css';
 import "./globals.css";
@@ -88,6 +89,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <SpeedInsights />
+        <Analytics />
         <GoogleAnalytics />
       </head>
       <body className="h-screen overflow-hidden">

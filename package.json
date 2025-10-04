@@ -17,6 +17,8 @@
     "@types/react-dropzone": "^4.2.2",
     "@upstash/ratelimit": "^1.0.1",
     "@upstash/redis": "^1.28.3",
+    "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.2.0",
     "crypto-js": "^4.2.0",
     "hex-rgb": "^5.0.0",
     "json-edit-react": "^1.29.0",
