@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Task = {
   id: string;
@@ -19,6 +19,13 @@ type PomodoroStats = {
   completedFocus: number; // số phiên focus hoàn thành hôm nay
 };
 
+type TimerPersist = {
+  isRunning: boolean;
+  isFocusMode: boolean;
+  targetEndAt: number | null; // timestamp ms khi phiên hiện tại kết thúc
+  timeLeftSeconds: number; // thời gian còn lại khi paused
+};
+
 const DEFAULT_SETTINGS: PomodoroSettings = {
   focusMinutes: 25,
   breakMinutes: 5,
@@ -29,6 +36,7 @@ const STORAGE_KEYS = {
   tasks: "pomodoro.tasks",
   settings: "pomodoro.settings",
   stats: "pomodoro.stats",
+  timer: "pomodoro.timer",
 } as const;
 
 function formatTime(totalSeconds: number) {
@@ -98,7 +106,9 @@ export default function PomodoroPage() {
   const [timeLeft, setTimeLeft] = useState<number>(totalSeconds);
   const [justEnded, setJustEnded] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const targetEndAtRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   // reset time when changing durations or mode
   useEffect(() => {
@@ -113,9 +123,118 @@ export default function PomodoroPage() {
     }
   }, [stats.date, setStats]);
 
-  // timer effect
+
+
+  // Hydrate timer từ localStorage khi mount
   useEffect(() => {
-    if (!isRunning) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.timer);
+      if (!raw) return;
+      const p: TimerPersist = JSON.parse(raw);
+      const now = Date.now();
+      setIsFocusMode(p.isFocusMode ?? true);
+      if (p.isRunning && p.targetEndAt) {
+        targetEndAtRef.current = p.targetEndAt;
+        const remaining = Math.max(0, Math.floor((p.targetEndAt - now) / 1000));
+        if (remaining <= 0) {
+          // phiên đã kết thúc khi đang ở tab khác
+          setIsRunning(false);
+          setJustEnded(true);
+          setTimeout(() => setJustEnded(false), 800);
+          if (settings.soundEnabled) {
+            playNotification();
+          }
+          if (p.isFocusMode) {
+            setStats((s) => ({ ...s, completedFocus: s.completedFocus + 1 }));
+          }
+          setIsFocusMode(!p.isFocusMode);
+          targetEndAtRef.current = null;
+          setTimeLeft(0);
+        } else {
+          setIsRunning(true);
+          setTimeLeft(remaining);
+        }
+      } else {
+        setIsRunning(false);
+        setTimeLeft(
+          typeof p.timeLeftSeconds === "number" ? p.timeLeftSeconds : totalSeconds
+        );
+        targetEndAtRef.current = null;
+      }
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist timer state
+  useEffect(() => {
+    try {
+      const payload: TimerPersist = {
+        isRunning,
+        isFocusMode,
+        targetEndAt: isRunning ? targetEndAtRef.current : null,
+        timeLeftSeconds: timeLeft,
+      };
+      localStorage.setItem(STORAGE_KEYS.timer, JSON.stringify(payload));
+    } catch { }
+  }, [isRunning, isFocusMode, timeLeft]);
+
+  const ensureAudioContext = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const AnyAudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AnyAudioContext) return;
+    if (!audioCtxRef.current) {
+      try {
+        audioCtxRef.current = new AnyAudioContext();
+      } catch {
+        // ignore
+      }
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume().catch(() => { });
+    }
+  }, []);
+
+  const playBeep = useCallback(() => {
+    try {
+      ensureAudioContext();
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      const duration = 0.2; // seconds
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = 880; // A5
+      gain.gain.setValueAtTime(0.001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      oscillator.connect(gain).connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + duration);
+    } catch {
+      // ignore
+    }
+  }, [ensureAudioContext]);
+
+  const playNotification = useCallback(() => {
+    // ưu tiên file WAV trong public; nếu bị chặn, fallback sang beep
+    const el = audioRef.current;
+    if (el) {
+      // đảm bảo tương tác người dùng đã khởi động context
+      ensureAudioContext();
+      el.currentTime = 0;
+      el.play().catch(() => {
+        playBeep();
+      });
+      return;
+    }
+    playBeep();
+  }, [ensureAudioContext, playBeep]);
+
+  // timer effect - dựa trên targetEndAt để không mất tiến trình khi chuyển tab
+  useEffect(() => {
+    if (!isRunning || !targetEndAtRef.current) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current as unknown as number);
         intervalRef.current = null;
@@ -123,29 +242,28 @@ export default function PomodoroPage() {
       return;
     }
     intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          // end session
-          setIsRunning(false);
-          setJustEnded(true);
-          setTimeout(() => setJustEnded(false), 800);
-          if (settings.soundEnabled) {
-            try {
-              audioRef.current?.play().catch(() => { });
-            } catch {
-              // ignore
-            }
-          }
-          // increment stats if focus finished
-          if (isFocusMode) {
-            setStats((s) => ({ ...s, completedFocus: s.completedFocus + 1 }));
-          }
-          // auto switch mode but paused
-          setIsFocusMode((m) => !m);
-          return 0;
+      const now = Date.now();
+      const remaining = Math.max(
+        0,
+        Math.floor((targetEndAtRef.current! - now) / 1000)
+      );
+      if (remaining <= 0) {
+        // kết thúc phiên
+        setIsRunning(false);
+        setJustEnded(true);
+        setTimeout(() => setJustEnded(false), 800);
+        if (settings.soundEnabled) {
+          playNotification();
         }
-        return prev - 1;
-      });
+        if (isFocusMode) {
+          setStats((s) => ({ ...s, completedFocus: s.completedFocus + 1 }));
+        }
+        setIsFocusMode((m) => !m);
+        targetEndAtRef.current = null;
+        setTimeLeft(0);
+      } else {
+        setTimeLeft(remaining);
+      }
     }, 1000);
 
     return () => {
@@ -154,7 +272,7 @@ export default function PomodoroPage() {
         intervalRef.current = null;
       }
     };
-  }, [isRunning, isFocusMode, settings.soundEnabled, setStats]);
+  }, [isRunning, isFocusMode, settings.soundEnabled, setStats, playNotification]);
 
   const progress = useMemo(() => {
     const elapsed = totalSeconds - timeLeft;
@@ -167,16 +285,27 @@ export default function PomodoroPage() {
   const dashOffset = circumference * (1 - progress);
 
   function handleStartPause() {
-    if (timeLeft === 0) {
-      // if ended, reset to new session of current mode
-      setTimeLeft(totalSeconds);
+    if (isRunning) {
+      const now = Date.now();
+      const remaining = targetEndAtRef.current
+        ? Math.max(0, Math.floor((targetEndAtRef.current - now) / 1000))
+        : timeLeft;
+      targetEndAtRef.current = null;
+      setTimeLeft(remaining);
+      setIsRunning(false);
+      return;
     }
-    setIsRunning((r) => !r);
+    const base = timeLeft === 0 ? totalSeconds : timeLeft;
+    setTimeLeft(base);
+    ensureAudioContext();
+    targetEndAtRef.current = Date.now() + base * 1000;
+    setIsRunning(true);
   }
 
   function handleReset() {
     setIsRunning(false);
     setTimeLeft(totalSeconds);
+    targetEndAtRef.current = null;
   }
 
   function handleSkip() {
@@ -186,6 +315,7 @@ export default function PomodoroPage() {
     }
     setIsFocusMode((m) => !m);
     setTimeLeft((prev) => (prev === 0 ? totalSeconds : totalSeconds));
+    targetEndAtRef.current = null;
   }
 
   function updateMinutes(kind: "focus" | "break", minutes: number) {
@@ -269,13 +399,14 @@ export default function PomodoroPage() {
     });
   }
 
-  // base64 short beep sound (440Hz, ~0.2s)
-  const BEEP_SRC =
-    "data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAAAAACAgICAgICAgICAgICAQEBAREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREQ==";
+  // notification sound from public
+  const NOTIFY_SRC = "/mixkit-clock-bells-hour-signal-1069.wav";
 
   return (
     <div className="max-w-6xl m-auto px-4 py-10 lg:py-12">
-      <audio ref={audioRef} src={BEEP_SRC} preload="auto" />
+      <audio ref={audioRef} src={NOTIFY_SRC} preload="auto" />
+
+
       <div className="flex flex-col lg:flex-row gap-10">
         {/* Timer Card */}
         <div className="flex-1">
@@ -289,6 +420,7 @@ export default function PomodoroPage() {
                     setIsFocusMode(true);
                     setIsRunning(false);
                     setTimeLeft(settings.focusMinutes * 60);
+                    targetEndAtRef.current = null;
                   }}
                 >
                   Focus
@@ -300,6 +432,7 @@ export default function PomodoroPage() {
                     setIsFocusMode(false);
                     setIsRunning(false);
                     setTimeLeft(settings.breakMinutes * 60);
+                    targetEndAtRef.current = null;
                   }}
                 >
                   Break

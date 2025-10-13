@@ -37,7 +37,7 @@ export default function HomeBody() {
                         <Link
                           href={itemInItem.href}
                           key={index}
-                          className="w-full text-mono p-4 h-44 border border-black bg-white hover:shadow-blog-l hover:translate-y-blog-2m hover:translate-x-blog-2p  ease-in duration-200"
+                          className="w-full text-mono p-4 h-44 border border-black bg-white hover:shadow-blog-l hover:translate-y-blog-4m hover:translate-x-blog-4p  ease-in duration-200"
                         >
                           <span className="text-lg bg-black text-white ">
                             {itemInItem.name}
