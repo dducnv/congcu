@@ -63,6 +63,12 @@ const toolsItems: SidebarItem[] = [
     href: "/draw",
     icon: "",
     desc: "Draw on screen."
+  },
+  {
+    name: "Pomodoro",
+    href: "/pomodoro",
+    icon: "",
+    desc: "Focus timer with tasks."
   }
 ];
 
