@@ -1164,9 +1164,8 @@ export const TextareaQuicknote = () => {
       )}
 
       {/* Format buttons */}
-      <div className="mb-3 p-3 bg-gray-50 border border-gray-300 rounded">
-        <div className="text-sm font-semibold text-gray-700 mb-2">Format Tools:</div>
-        <div className="flex flex-wrap gap-2">
+      <div className="mb-3">
+   <div className="flex flex-wrap gap-2">
           {/* Text formatting buttons */}
           <div className="flex flex-wrap gap-1 mr-4">
             <button
