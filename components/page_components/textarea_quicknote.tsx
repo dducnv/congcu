@@ -53,6 +53,7 @@ type TextareaQuicknoteItem = {
 
 type ViewMode = "split" | "editor" | "preview";
 type ThemeMode = "light" | "dark" | "deepdark" | "sepia" | "lightgray";
+type FontSizeMode = "normal" | "large" | "xlarge";
 
 type TocItem = {
   level: number;
@@ -83,6 +84,7 @@ export const TextareaQuicknote = () => {
   const [showFormatTools, setShowFormatTools] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [theme, setTheme] = useState<ThemeMode>("light");
+  const [fontSize, setFontSize] = useState<FontSizeMode>("normal");
   const [showToc, setShowToc] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -101,6 +103,14 @@ export const TextareaQuicknote = () => {
   };
 
   const currentTheme = themes[theme];
+
+  const fontConfig: Record<FontSizeMode, { editor: string, preview: string, label: string }> = {
+    normal: { editor: "text-sm", preview: "prose-base", label: "A" },
+    large: { editor: "text-lg", preview: "prose-lg", label: "A+" },
+    xlarge: { editor: "text-xl", preview: "prose-xl", label: "A++" }
+  };
+
+  const currentFont = fontConfig[fontSize];
 
   // Filtered emojis based on search
   const filteredEmojis = useMemo(() => {
@@ -1193,6 +1203,21 @@ ${previewRef.current.innerHTML}
             ))}
           </div>
         )}
+
+        {markdownMode && (
+          <div className="flex items-center border border-gray-300 rounded overflow-hidden ml-1 bg-white">
+            {(Object.keys(fontConfig) as FontSizeMode[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFontSize(f)}
+                className={`px-2 h-6 flex items-center justify-center text-[10px] font-bold border-r last:border-r-0 border-gray-300 hover:bg-gray-100 transition-all ${fontSize === f ? 'bg-gray-900 text-white hover:bg-black' : 'text-gray-600'}`}
+                title={`Font Size: ${f}`}
+              >
+                {fontConfig[f].label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -1410,7 +1435,7 @@ ${previewRef.current.innerHTML}
           spellCheck="true"
           value={selectedTab?.notes ?? ""}
           placeholder={"Write markdown here...\n\n# Heading 1\n## Heading 2\n\n**Bold** *Italic* ~~Strikethrough~~\n\n- List item\n- [ ] Task\n\n```code block```"}
-          className={`flex-1 w-full outline-none p-3 text-sm font-mono resize-none leading-[1.7] bg-transparent ${currentTheme.text} ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}
+          className={`flex-1 w-full outline-none p-3 ${currentFont.editor} font-mono resize-none leading-[1.7] bg-transparent ${currentTheme.text} ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}
         />
       </div>
     </div>
@@ -1424,7 +1449,7 @@ ${previewRef.current.innerHTML}
         </div>
       )}
       <div ref={previewRef} onScroll={viewMode === 'split' ? handlePreviewScroll : undefined}
-        className={`flex-1 p-4 overflow-auto prose-quicknote ${currentTheme.prose} ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}
+        className={`flex-1 p-4 overflow-auto prose-quicknote ${currentFont.preview} ${currentTheme.prose} ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}
         style={{ color: 'inherit' }}>
         {markdownContent ? (
           <ReactMarkdown
