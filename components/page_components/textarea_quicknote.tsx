@@ -2,8 +2,10 @@
 
 import { decryptData, encryptData } from "@/core/utils";
 import { PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { uid } from "uid";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type TextareaQuicknoteItem = {
   date: string;
@@ -31,6 +33,9 @@ export const TextareaQuicknote = () => {
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [showStats, setShowStats] = useState(false);
+  const [markdownMode, setMarkdownMode] = useState(false);
+  const [showFormatTools, setShowFormatTools] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const dateTimeNow = new Date().toLocaleString();
 
@@ -74,7 +79,7 @@ export const TextareaQuicknote = () => {
       "href",
       "data:text/plain;charset=utf-8," + encodeURIComponent(text)
     );
-    element.setAttribute("download", filName + ".txt");
+    element.setAttribute("download", filName + (markdownMode ? ".md" : ".txt"));
     element.style.display = "none";
     document.body.appendChild(element);
     element.click();
@@ -293,38 +298,6 @@ export const TextareaQuicknote = () => {
     }
   }
 
-  function formatText() {
-    if (!selectedTab || !selectedTab.notes) {
-      alert("No content to format");
-      return;
-    }
-
-    // Convert multi-line text into a single paragraph
-    const formattedText = selectedTab.notes
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .join(' ');
-
-    const newTabList = textNotesList.map((item) => {
-      if (item.id === selectedTab?.id) {
-        return {
-          ...item,
-          notes: formattedText,
-        };
-      }
-      return item;
-    });
-
-    setTextNotesList(newTabList);
-    setSelectedTab(
-      newTabList.find(
-        (item) => item.id === selectedTab?.id
-      ) as TextareaQuicknoteItem
-    );
-    localStorage.setItem("textNotesList", JSON.stringify(newTabList));
-  }
-
   const updateTextContent = useCallback((newText: string) => {
     const newTabList = textNotesList.map((item) => {
       if (item.id === selectedTab?.id) {
@@ -345,20 +318,18 @@ export const TextareaQuicknote = () => {
     localStorage.setItem("textNotesList", JSON.stringify(newTabList));
   }, [textNotesList, selectedTab?.id]);
 
-
   function formatToParagraph() {
     if (!selectedTab || !selectedTab.notes) {
       alert("No content to format");
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    // Nếu có văn bản được chọn, chỉ format phần được chọn
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText
@@ -370,7 +341,6 @@ export const TextareaQuicknote = () => {
       const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
       updateTextContent(newText);
     } else {
-      // Nếu không có văn bản được chọn, format toàn bộ
       const formattedText = selectedTab.notes
         .split('\n')
         .map(line => line.trim())
@@ -387,20 +357,18 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    // Nếu có văn bản được chọn, chỉ format phần được chọn
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText.toUpperCase();
       const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
       updateTextContent(newText);
     } else {
-      // Nếu không có văn bản được chọn, format toàn bộ
       const formattedText = selectedTab.notes.toUpperCase();
       updateTextContent(formattedText);
     }
@@ -412,20 +380,18 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    // Nếu có văn bản được chọn, chỉ format phần được chọn
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText.toLowerCase();
       const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
       updateTextContent(newText);
     } else {
-      // Nếu không có văn bản được chọn, format toàn bộ
       const formattedText = selectedTab.notes.toLowerCase();
       updateTextContent(formattedText);
     }
@@ -437,13 +403,12 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    // Nếu có văn bản được chọn, chỉ format phần được chọn
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText
@@ -458,7 +423,6 @@ export const TextareaQuicknote = () => {
       const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
       updateTextContent(newText);
     } else {
-      // Nếu không có văn bản được chọn, format toàn bộ
       const formattedText = selectedTab.notes
         .toLowerCase()
         .split(' ')
@@ -478,13 +442,12 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    // Nếu có văn bản được chọn, chỉ format phần được chọn
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText
@@ -494,7 +457,6 @@ export const TextareaQuicknote = () => {
       const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
       updateTextContent(newText);
     } else {
-      // Nếu không có văn bản được chọn, format toàn bộ
       const formattedText = selectedTab.notes
         .toLowerCase()
         .replace(/(^\w|\.\s+\w)/g, (char) => char.toUpperCase());
@@ -509,13 +471,12 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    // Nếu có văn bản được chọn, chỉ format phần được chọn
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText
@@ -530,7 +491,6 @@ export const TextareaQuicknote = () => {
       const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
       updateTextContent(newText);
     } else {
-      // Nếu không có văn bản được chọn, format toàn bộ
       const formattedText = selectedTab.notes
         .split('\n')
         .map(line => {
@@ -550,41 +510,31 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    // Nếu có văn bản được chọn, chỉ format phần được chọn
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText
-        // Remove multiple consecutive spaces to single space
         .replace(/[ \t]+/g, ' ')
-        // Remove whitespace at beginning and end of each line
         .split('\n')
         .map(line => line.trim())
         .join('\n')
-        // Remove multiple consecutive empty lines to single empty line
         .replace(/\n\s*\n\s*\n/g, '\n\n')
-        // Remove whitespace at beginning and end of entire text
         .trim();
 
       const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
       updateTextContent(newText);
     } else {
-      // Nếu không có văn bản được chọn, format toàn bộ
       const formattedText = selectedTab.notes
-        // Remove multiple consecutive spaces to single space
         .replace(/[ \t]+/g, ' ')
-        // Remove whitespace at beginning and end of each line
         .split('\n')
         .map(line => line.trim())
         .join('\n')
-        // Remove multiple consecutive empty lines to single empty line
         .replace(/\n\s*\n\s*\n/g, '\n\n')
-        // Remove whitespace at beginning and end of entire text
         .trim();
 
       updateTextContent(formattedText);
@@ -597,58 +547,49 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    // Nếu có văn bản được chọn, chỉ format phần được chọn
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText
-        // Loại bỏ tất cả khoảng trắng giữa các dòng (bao gồm dòng trống)
         .replace(/\n\s*\n/g, '\n')
-        // Loại bỏ khoảng trắng đầu và cuối mỗi dòng
         .split('\n')
         .map(line => line.trim())
         .join('\n')
-        // Loại bỏ khoảng trắng đầu và cuối toàn bộ
         .trim();
 
       const newText = selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end);
       updateTextContent(newText);
     } else {
-      // Nếu không có văn bản được chọn, format toàn bộ
       const formattedText = selectedTab.notes
-        // Loại bỏ tất cả khoảng trắng giữa các dòng (bao gồm dòng trống)
         .replace(/\n\s*\n/g, '\n')
-        // Loại bỏ khoảng trắng đầu và cuối mỗi dòng
         .split('\n')
         .map(line => line.trim())
         .join('\n')
-        // Loại bỏ khoảng trắng đầu và cuối toàn bộ
         .trim();
 
       updateTextContent(formattedText);
     }
   }
 
-  // New formatting functions for selected text
   const formatSelectedText = useCallback((prefix: string) => {
     if (!selectedTab?.notes) {
       alert("No content to format");
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
     if (start === end) {
-      alert("Vui lòng tô đen văn bản trước khi format");
+      alert("Please select text before formatting");
       return;
     }
 
@@ -656,21 +597,12 @@ export const TextareaQuicknote = () => {
     const lines = selectedText.split('\n');
 
     const formattedLines = lines.map(line => {
-      if (line.trim() === '') return line; // Giữ nguyên dòng trống
+      if (line.trim() === '') return line;
 
-      // Loại bỏ ký tự đầu dòng không phải text/số (bao gồm số thứ tự, chữ cái thứ tự)
       const trimmedLine = line.trim();
-
-      // Pattern để nhận diện các ký tự đầu dòng cần loại bỏ:
-      // - Số thứ tự: 1. 2. 3. 10. 100.
-      // - Chữ cái thứ tự: a. b. c. d.
-      // - Ký tự đặc biệt: • - + * → (tab, space)
       const removePattern = /^(\d+\.\s*|[a-z]\.\s*|[A-Z]\.\s*|•\s*|-\s*|\+\s*|\*\s*|→\s*|\t+|\s+)/;
-
-      // Loại bỏ ký tự đầu dòng không mong muốn
       const cleanedLine = trimmedLine.replace(removePattern, '');
 
-      // Thêm prefix mới
       return prefix + cleanedLine;
     });
 
@@ -710,7 +642,7 @@ export const TextareaQuicknote = () => {
       return;
     }
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
@@ -725,9 +657,8 @@ export const TextareaQuicknote = () => {
     const lines = selectedText.split('\n');
 
     const formattedLines = lines.map((line, index) => {
-      if (line.trim() === '') return line; // Giữ nguyên dòng trống
+      if (line.trim() === '') return line;
 
-      // Loại bỏ ký tự đầu dòng không phải text/số
       const trimmedLine = line.trim();
       const removePattern = /^(\d+\.\s*|[a-z]\.\s*|[A-Z]\.\s*|•\s*|-\s*|\+\s*|\*\s*|→\s*|\t+|\s+)/;
       const cleanedLine = trimmedLine.replace(removePattern, '');
@@ -779,7 +710,7 @@ export const TextareaQuicknote = () => {
   function scrollToSearchResult(index: number) {
     if (index < 0 || index >= searchResults.length) return;
 
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (textarea) {
       const position = searchResults[index];
       textarea.focus();
@@ -800,7 +731,6 @@ export const TextareaQuicknote = () => {
 
     updateTextContent(newText);
 
-    // Update search results
     setTimeout(() => {
       searchInText();
     }, 100);
@@ -818,14 +748,12 @@ export const TextareaQuicknote = () => {
 
     updateTextContent(newText);
 
-    // Reset search
     setSearchResults([]);
     setCurrentSearchIndex(-1);
     setSearchTerm("");
     setReplaceTerm("");
   }
 
-  // Auto search when searchTerm changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       searchInText();
@@ -834,7 +762,6 @@ export const TextareaQuicknote = () => {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, selectedTab?.notes, searchInText]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.ctrlKey && event.key === 'f') {
@@ -852,14 +779,13 @@ export const TextareaQuicknote = () => {
         setShowSearchReplace(false);
       }
 
-      // Format shortcuts for selected text
       if (event.ctrlKey && event.shiftKey) {
-        const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+        const textarea = textareaRef.current;
         if (textarea && document.activeElement === textarea) {
           const start = textarea.selectionStart;
           const end = textarea.selectionEnd;
 
-          if (start !== end) { // Có văn bản được chọn
+          if (start !== end) {
             switch (event.key) {
               case 'T':
                 event.preventDefault();
@@ -901,8 +827,6 @@ export const TextareaQuicknote = () => {
     };
   }, [showSearchReplace, addTabToSelectedLines, addSpaceToSelectedLines, addBulletToSelectedLines, addDashToSelectedLines, addPlusToSelectedLines, addAsteriskToSelectedLines, addNumberToSelectedLines]);
 
-
-  // Function to calculate text statistics
   function calculateTextStats() {
     if (!selectedTab?.notes) {
       return {
@@ -916,21 +840,11 @@ export const TextareaQuicknote = () => {
     }
 
     const text = selectedTab.notes;
-
-    // Count characters
     const characters = text.length;
     const charactersNoSpaces = text.replace(/\s/g, '').length;
-
-    // Count words (remove extra spaces and split by spaces)
     const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-
-    // Count lines
     const lines = text === '' ? 0 : text.split('\n').length;
-
-    // Count paragraphs (non-empty lines)
     const paragraphs = text.trim() === '' ? 0 : text.split('\n').filter(line => line.trim() !== '').length;
-
-    // Calculate reading time (average 200 words/minute)
     const readingTime = Math.ceil(words / 200);
 
     return {
@@ -945,363 +859,588 @@ export const TextareaQuicknote = () => {
 
   const textStats = calculateTextStats();
 
-  return (
-    <>
-      <div className="flex justify-between items-center">
-        <div className="flex space-x-3 mb-3">
-          <a
-            onClick={() =>
-              downloadFile(
-                selectedTab?.file_name ?? "file name",
-                selectedTab?.notes ?? ""
-              )
-            }
-            className="hover:underline hover:cursor-pointer"
+  const markdownContent = useMemo(() => {
+    if (!markdownMode || !selectedTab?.notes) return null;
+    return selectedTab.notes;
+  }, [markdownMode, selectedTab?.notes]);
+
+  // ===== Markdown toolbar insert helpers =====
+  const insertMarkdown = useCallback((type: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = selectedTab?.notes ?? "";
+    const selected = text.substring(start, end);
+
+    let before = "";
+    let after = "";
+    let insert = "";
+    let cursorOffset = 0;
+
+    switch (type) {
+      case "bold":
+        before = "**";
+        after = "**";
+        insert = selected || "bold text";
+        break;
+      case "italic":
+        before = "*";
+        after = "*";
+        insert = selected || "italic text";
+        break;
+      case "heading": {
+        const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+        const lineText = text.substring(lineStart, end);
+        const headingMatch = lineText.match(/^(#{1,6})\s/);
+        if (headingMatch) {
+          const level = headingMatch[1].length;
+          if (level >= 6) {
+            const newText = text.substring(0, lineStart) + lineText.replace(/^#{1,6}\s/, '') + text.substring(end);
+            updateTextContent(newText);
+            textarea.focus();
+            setTimeout(() => textarea.setSelectionRange(lineStart, lineStart + lineText.length - level - 1), 0);
+            return;
+          }
+          const newText = text.substring(0, lineStart) + '#' + lineText + text.substring(end);
+          updateTextContent(newText);
+          textarea.focus();
+          setTimeout(() => textarea.setSelectionRange(start + 1, end + 1), 0);
+          return;
+        }
+        const prefix = "## ";
+        const newText = text.substring(0, lineStart) + prefix + text.substring(lineStart);
+        updateTextContent(newText);
+        textarea.focus();
+        setTimeout(() => textarea.setSelectionRange(start + prefix.length, end + prefix.length), 0);
+        return;
+      }
+      case "ul": {
+        if (selected) {
+          const lines = selected.split('\n').map(l => l.trim() ? `- ${l.replace(/^[-*+]\s*/, '')}` : l).join('\n');
+          const newText = text.substring(0, start) + lines + text.substring(end);
+          updateTextContent(newText);
+          textarea.focus();
+          setTimeout(() => textarea.setSelectionRange(start, start + lines.length), 0);
+          return;
+        }
+        before = "- ";
+        insert = "list item";
+        break;
+      }
+      case "ol": {
+        if (selected) {
+          let num = 1;
+          const lines = selected.split('\n').map(l => l.trim() ? `${num++}. ${l.replace(/^\d+\.\s*/, '')}` : l).join('\n');
+          const newText = text.substring(0, start) + lines + text.substring(end);
+          updateTextContent(newText);
+          textarea.focus();
+          setTimeout(() => textarea.setSelectionRange(start, start + lines.length), 0);
+          return;
+        }
+        before = "1. ";
+        insert = "list item";
+        break;
+      }
+      case "checklist": {
+        if (selected) {
+          const lines = selected.split('\n').map(l => l.trim() ? `- [ ] ${l.replace(/^[-*+]\s*(\[[ x]\]\s*)?/, '')}` : l).join('\n');
+          const newText = text.substring(0, start) + lines + text.substring(end);
+          updateTextContent(newText);
+          textarea.focus();
+          setTimeout(() => textarea.setSelectionRange(start, start + lines.length), 0);
+          return;
+        }
+        before = "- [ ] ";
+        insert = "task";
+        break;
+      }
+      case "blockquote": {
+        if (selected) {
+          const lines = selected.split('\n').map(l => `> ${l}`).join('\n');
+          const newText = text.substring(0, start) + lines + text.substring(end);
+          updateTextContent(newText);
+          textarea.focus();
+          setTimeout(() => textarea.setSelectionRange(start, start + lines.length), 0);
+          return;
+        }
+        before = "> ";
+        insert = "quote";
+        break;
+      }
+      case "code":
+        if (selected && selected.includes('\n')) {
+          before = "```\n";
+          after = "\n```";
+          insert = selected;
+        } else {
+          before = "`";
+          after = "`";
+          insert = selected || "code";
+        }
+        break;
+      case "table":
+        insert = "| Column 1 | Column 2 | Column 3 |\n| --- | --- | --- |\n| Cell | Cell | Cell |";
+        cursorOffset = 2;
+        break;
+      case "link":
+        before = "[";
+        after = "](url)";
+        insert = selected || "link text";
+        break;
+      case "image":
+        before = "![";
+        after = "](url)";
+        insert = selected || "alt text";
+        break;
+      case "hr":
+        insert = "\n---\n";
+        break;
+      default:
+        return;
+    }
+
+    const newText = text.substring(0, start) + before + insert + after + text.substring(end);
+    updateTextContent(newText);
+    textarea.focus();
+    const newCursorStart = start + before.length + (cursorOffset || 0);
+    const newCursorEnd = newCursorStart + insert.length - (cursorOffset || 0);
+    setTimeout(() => textarea.setSelectionRange(newCursorStart, newCursorEnd), 0);
+  }, [selectedTab?.notes, updateTextContent]);
+
+  // ===== Markdown keyboard shortcuts =====
+  useEffect(() => {
+    if (!markdownMode) return;
+
+    function handleMdKeyDown(event: KeyboardEvent) {
+      if (!event.metaKey || !event.shiftKey) return;
+
+      const keyMap: Record<string, string> = {
+        'b': 'bold',
+        'i': 'italic',
+        'u': 'ul',
+        'o': 'ol',
+        'c': 'checklist',
+        'q': 'blockquote',
+        'k': 'code',
+        't': 'table',
+        'l': 'link',
+        'g': 'image',
+      };
+
+      const action = keyMap[event.key.toLowerCase()];
+      if (action) {
+        event.preventDefault();
+        insertMarkdown(action);
+      }
+    }
+
+    document.addEventListener('keydown', handleMdKeyDown);
+    return () => document.removeEventListener('keydown', handleMdKeyDown);
+  }, [markdownMode, insertMarkdown]);
+
+  // Shared toolbar & panels used in both modes
+  const toolbarButtons = (
+    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() =>
+            downloadFile(
+              selectedTab?.file_name ?? "file name",
+              selectedTab?.notes ?? ""
+            )
+          }
+          className="px-2.5 py-1.5 text-sm hover:bg-gray-100 border border-gray-200 rounded transition-colors"
+          title="Save file"
+        >
+          Save
+        </button>
+        <button
+          onClick={importFile}
+          className="px-2.5 py-1.5 text-sm hover:bg-gray-100 border border-gray-200 rounded transition-colors"
+          title="Import file"
+        >
+          Import
+        </button>
+        <button
+          onClick={backupData}
+          className="px-2.5 py-1.5 text-sm hover:bg-gray-100 border border-gray-200 rounded transition-colors"
+          title="Backup all tabs"
+        >
+          Backup
+        </button>
+        <button
+          onClick={importBackupData}
+          className="px-2.5 py-1.5 text-sm hover:bg-gray-100 border border-gray-200 rounded transition-colors"
+          title="Restore from backup"
+        >
+          Restore
+        </button>
+
+        <div className="w-px h-5 bg-gray-300 mx-1" />
+
+        <button
+          onClick={() => setShowSearchReplace(!showSearchReplace)}
+          className={`px-2.5 py-1.5 text-sm border rounded transition-colors ${showSearchReplace ? 'bg-gray-900 text-white border-gray-900' : 'hover:bg-gray-100 border-gray-200'}`}
+          title="Search & Replace (Ctrl+F)"
+        >
+          Search
+        </button>
+        <button
+          onClick={() => setShowStats(!showStats)}
+          className={`px-2.5 py-1.5 text-sm border rounded transition-colors ${showStats ? 'bg-gray-900 text-white border-gray-900' : 'hover:bg-gray-100 border-gray-200'}`}
+          title="Text statistics"
+        >
+          Stats
+        </button>
+        {!markdownMode && (
+          <button
+            onClick={() => setShowFormatTools(!showFormatTools)}
+            className={`px-2.5 py-1.5 text-sm border rounded transition-colors ${showFormatTools ? 'bg-gray-900 text-white border-gray-900' : 'hover:bg-gray-100 border-gray-200'}`}
+            title="Text formatting tools"
           >
-            Save
-          </a>
-          <a
-            onClick={importFile}
-            className="hover:underline hover:cursor-pointer"
-          >
-            Import File
-          </a>
-          <a
-            onClick={() => setShowSearchReplace(!showSearchReplace)}
-            className="hover:underline hover:cursor-pointer"
-          >
-            Search
-          </a>
-          <a
-            onClick={() => setShowStats(!showStats)}
-            className="hover:underline hover:cursor-pointer"
-          >
-            Statistics
-          </a>
+            Format
+          </button>
+        )}
+      </div>
+
+      <button
+        onClick={() => setMarkdownMode(!markdownMode)}
+        className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded transition-all ${
+          markdownMode
+            ? 'bg-black text-white border-black'
+            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+        }`}
+        title="Toggle Markdown preview"
+      >
+        <span className="font-bold text-xs tracking-wide">MD</span>
+        <div className={`relative w-8 h-4 rounded-full transition-colors ${markdownMode ? 'bg-gray-500' : 'bg-gray-300'}`}>
+          <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${markdownMode ? 'translate-x-4' : 'translate-x-0.5'}`} />
         </div>
-        <div className="flex space-x-3">
-          <a
-            onClick={backupData}
-            className="hover:underline hover:cursor-pointer"
+      </button>
+    </div>
+  );
+
+  const tabBar = (
+    <div className="flex items-center mb-3 space-x-2">
+      <div className="flex items-center space-x-1.5 overflow-x-auto w-full tab-scroll pb-1">
+        {textNotesList.map((item) => (
+          <div
+            key={item.id}
+            className={`
+              min-w-28 max-w-44 flex-shrink-0
+              flex space-x-1 justify-center items-center border hover:cursor-pointer pl-2.5 pr-1 py-1 rounded-sm transition-colors ${item.id === selectedTab?.id
+                ? "bg-gray-50 border-black"
+                : "border-gray-300 text-gray-500 hover:border-gray-400"
+              }`}
           >
-            Backup
-          </a>
-          <a
-            onClick={importBackupData}
-            className="hover:underline hover:cursor-pointer"
+            <span
+              onDoubleClick={() => editFileName(item)}
+              onClick={() => selectTabNotes(item)}
+              className="truncate w-full text-sm"
+            >
+              {item.file_name}
+            </span>
+            <button
+              onClick={() => deleteTabNotes(item)}
+              className="rounded-full hover:bg-gray-200 p-1.5 flex justify-center items-center flex-shrink-0"
+            >
+              <XMarkIcon className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={addTabNotes}
+        className="rounded-full hover:bg-gray-200 p-2 flex justify-center items-center flex-shrink-0"
+      >
+        <PlusIcon className="w-4 h-4" />
+      </button>
+    </div>
+  );
+
+  const searchReplacePanel = showSearchReplace && (
+    <div className="mb-3 p-3 border border-black bg-gray-50 rounded-sm">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 focus:outline-none focus:border-black rounded-sm"
+          />
+          <button
+            onClick={prevSearchResult}
+            disabled={searchResults.length === 0}
+            className="px-2.5 py-1.5 text-sm bg-gray-800 text-white rounded-sm hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            Restore
-          </a>
+            ↑
+          </button>
+          <button
+            onClick={nextSearchResult}
+            disabled={searchResults.length === 0}
+            className="px-2.5 py-1.5 text-sm bg-gray-800 text-white rounded-sm hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            ↓
+          </button>
+          <span className="text-xs text-gray-500 min-w-14 text-center">
+            {searchResults.length > 0 ? `${currentSearchIndex + 1}/${searchResults.length}` : '0/0'}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Replace with..."
+            value={replaceTerm}
+            onChange={(e) => setReplaceTerm(e.target.value)}
+            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 focus:outline-none focus:border-black rounded-sm"
+          />
+          <button
+            onClick={replaceOne}
+            disabled={searchResults.length === 0 || currentSearchIndex < 0}
+            className="px-2.5 py-1.5 text-sm bg-gray-800 text-white rounded-sm hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Replace
+          </button>
+          <button
+            onClick={replaceAll}
+            disabled={searchResults.length === 0}
+            className="px-2.5 py-1.5 text-sm bg-gray-800 text-white rounded-sm hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            All
+          </button>
+          <button
+            onClick={() => setShowSearchReplace(false)}
+            className="px-2.5 py-1.5 text-sm text-gray-500 hover:text-black"
+          >
+            Close
+          </button>
         </div>
       </div>
-      <div className="flex items-center mb-3 space-x-2">
-        <div className="flex items-center space-x-3 overflow-x-auto w-full tab-scroll">
-          {textNotesList.map((item) => (
-            <div
-              key={item.id}
-              className={`
-                                min-w-32 max-w-44
-                                flex space-x-2 justify-center items-center border hover:cursor-pointer  pl-2 pr-1 py-1 ${item.id === selectedTab?.id
-                  ? "bg-gray-50 border-black"
-                  : "border-gray-300 text-gray-500"
-                }`}
-            >
-              <span
-                onDoubleClick={() => editFileName(item)}
-                onClick={() => selectTabNotes(item)}
-                className="truncate w-full"
-              >
-                {item.file_name}
-              </span>
-              <button
-                onClick={() => deleteTabNotes(item)}
-                className="rounded-full hover:bg-gray-200  p-2 flex justify-center items-center "
-              >
-                <XMarkIcon className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+    </div>
+  );
+
+  const statsPanel = showStats && (
+    <div className="mb-3 p-3 border border-black bg-gray-50 rounded-sm">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-sm font-semibold text-gray-800">Text Statistics</h3>
         <button
-          onClick={addTabNotes}
-          className="rounded-full hover:bg-gray-200  p-2 flex justify-center items-center"
+          onClick={() => setShowStats(false)}
+          className="text-xs text-gray-500 hover:text-black"
         >
-          <PlusIcon className="w-4 h-4" />
+          Close
         </button>
       </div>
 
-      {showSearchReplace && (
-        <div className="mb-3 p-4 border border-black bg-gray-50">
-          <div className="flex flex-col space-y-3">
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-3 py-2 border border-black focus:outline-none focus:border-black"
-              />
-              <button
-                onClick={prevSearchResult}
-                disabled={searchResults.length === 0}
-                className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                ↑
-              </button>
-              <button
-                onClick={nextSearchResult}
-                disabled={searchResults.length === 0}
-                className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                ↓
-              </button>
-              <span className="text-sm text-gray-600 min-w-20">
-                {searchResults.length > 0 ? `${currentSearchIndex + 1}/${searchResults.length}` : '0/0'}
-              </span>
-            </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="bg-white p-2.5 border border-gray-200 rounded-sm">
+          <div className="text-xl font-bold text-gray-900">{textStats.words.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Words</div>
+        </div>
+        <div className="bg-white p-2.5 border border-gray-200 rounded-sm">
+          <div className="text-xl font-bold text-gray-900">{textStats.characters.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Characters</div>
+        </div>
+        <div className="bg-white p-2.5 border border-gray-200 rounded-sm">
+          <div className="text-xl font-bold text-gray-900">{textStats.lines.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Lines</div>
+        </div>
+        <div className="bg-white p-2.5 border border-gray-200 rounded-sm">
+          <div className="text-xl font-bold text-gray-900">{textStats.paragraphs.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Paragraphs</div>
+        </div>
+        <div className="bg-white p-2.5 border border-gray-200 rounded-sm">
+          <div className="text-xl font-bold text-gray-900">{textStats.charactersNoSpaces.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Chars (no space)</div>
+        </div>
+        <div className="bg-white p-2.5 border border-gray-200 rounded-sm">
+          <div className="text-xl font-bold text-gray-900">
+            {textStats.readingTime} {textStats.readingTime === 1 ? 'min' : 'mins'}
+          </div>
+          <div className="text-xs text-gray-500">Reading time</div>
+        </div>
+        <div className="bg-white p-2.5 border border-gray-200 rounded-sm">
+          <div className="text-xl font-bold text-gray-900">
+            {textStats.words > 0 ? (textStats.characters / textStats.words).toFixed(1) : '0'}
+          </div>
+          <div className="text-xs text-gray-500">Avg chars/word</div>
+        </div>
+        <div className="bg-white p-2.5 border border-gray-200 rounded-sm">
+          <div className="text-xl font-bold text-gray-900">
+            {textStats.lines > 0 ? (textStats.words / textStats.lines).toFixed(1) : '0'}
+          </div>
+          <div className="text-xs text-gray-500">Avg words/line</div>
+        </div>
+      </div>
+    </div>
+  );
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                placeholder="Replace with..."
-                value={replaceTerm}
-                onChange={(e) => setReplaceTerm(e.target.value)}
-                className="flex-1 px-3 py-2 border border-black focus:outline-none focus:border-black"
-              />
-              <button
-                onClick={replaceOne}
-                disabled={searchResults.length === 0 || currentSearchIndex < 0}
-                className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Replace
-              </button>
-              <button
-                onClick={replaceAll}
-                disabled={searchResults.length === 0}
-                className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Replace All
-              </button>
-              <button
-                onClick={() => setShowSearchReplace(false)}
-                className="px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-              >
-                Close
-              </button>
+  const mdToolbarBtnClass = "px-2 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm transition-colors";
+
+  const markdownToolbar = (
+    <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-black overflow-x-auto">
+      <button onClick={() => insertMarkdown('bold')} className={mdToolbarBtnClass} title="Bold (Cmd+Shift+B)"><strong>B</strong></button>
+      <button onClick={() => insertMarkdown('italic')} className={mdToolbarBtnClass} title="Italic (Cmd+Shift+I)"><em>I</em></button>
+      <button onClick={() => insertMarkdown('heading')} className={mdToolbarBtnClass} title="Heading">H</button>
+      <div className="w-px h-4 bg-gray-300 mx-0.5" />
+      <button onClick={() => insertMarkdown('ul')} className={mdToolbarBtnClass} title="Unordered list (Cmd+Shift+U)">UL</button>
+      <button onClick={() => insertMarkdown('ol')} className={mdToolbarBtnClass} title="Ordered list (Cmd+Shift+O)">OL</button>
+      <button onClick={() => insertMarkdown('checklist')} className={mdToolbarBtnClass} title="Check list (Cmd+Shift+C)">Check</button>
+      <div className="w-px h-4 bg-gray-300 mx-0.5" />
+      <button onClick={() => insertMarkdown('blockquote')} className={mdToolbarBtnClass} title="Blockquote (Cmd+Shift+Q)">Quote</button>
+      <button onClick={() => insertMarkdown('code')} className={mdToolbarBtnClass} title="Code (Cmd+Shift+K)">Code</button>
+      <button onClick={() => insertMarkdown('table')} className={mdToolbarBtnClass} title="Table (Cmd+Shift+T)">Table</button>
+      <div className="w-px h-4 bg-gray-300 mx-0.5" />
+      <button onClick={() => insertMarkdown('link')} className={mdToolbarBtnClass} title="Link (Cmd+Shift+L)">Link</button>
+      <button onClick={() => insertMarkdown('image')} className={mdToolbarBtnClass} title="Image (Cmd+Shift+G)">Img</button>
+      <button onClick={() => insertMarkdown('hr')} className={mdToolbarBtnClass} title="Horizontal rule">HR</button>
+    </div>
+  );
+
+  const footerBar = (
+    <div className="flex justify-between items-center mt-1.5">
+      <span className="text-xs text-gray-400">
+        {selectedTab?.date ? `Last modified: ${selectedTab.date}` : ''}
+      </span>
+      <div className="flex items-center gap-3 text-xs text-gray-500">
+        {markdownMode && <span className="text-black font-medium">Markdown</span>}
+        <span>{textStats.words} words</span>
+        <span>{textStats.characters} chars</span>
+        <span>{textStats.lines} lines</span>
+        {textStats.readingTime > 0 && (
+          <span>~{textStats.readingTime} min read</span>
+        )}
+      </div>
+    </div>
+  );
+
+  // ===== MARKDOWN FULL-SCREEN MODE =====
+  if (markdownMode) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white flex flex-col">
+        {/* Top area */}
+        <div className="px-4 pt-3 flex-shrink-0">
+          {toolbarButtons}
+          {tabBar}
+          {searchReplacePanel}
+          {statsPanel}
+        </div>
+
+        {/* Split editor */}
+        <div className="flex flex-1 border-t border-black min-h-0">
+          {/* Editor side */}
+          <div className="w-1/2 border-r border-black flex flex-col min-h-0">
+            <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium flex-shrink-0">
+              EDITOR
+            </div>
+            {markdownToolbar}
+            <textarea
+              ref={textareaRef}
+              onChange={editTextNotes}
+              spellCheck="true"
+              value={selectedTab?.notes ?? ""}
+              placeholder={"Write markdown here...\n\n# Heading 1\n## Heading 2\n\n**Bold** *Italic* ~~Strikethrough~~\n\n- List item\n- [ ] Task\n\n```code block```"}
+              className="flex-1 w-full outline-none p-3 text-sm font-mono resize-none"
+            />
+          </div>
+
+          {/* Preview side */}
+          <div className="w-1/2 flex flex-col min-h-0">
+            <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium flex-shrink-0">
+              PREVIEW
+            </div>
+            <div className="flex-1 p-4 overflow-auto prose-quicknote">
+              {markdownContent ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {markdownContent}
+                </ReactMarkdown>
+              ) : (
+                <p className="text-gray-400 text-sm italic">Markdown preview will appear here...</p>
+              )}
             </div>
           </div>
         </div>
-      )}
 
-      {showStats && (
-        <div className="mb-3 p-4 border border-black bg-blue-50">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-semibold text-gray-800">📊 Text Statistics</h3>
+        {/* Footer */}
+        <div className="px-4 py-1.5 border-t border-gray-200 flex-shrink-0">
+          {footerBar}
+        </div>
+      </div>
+    );
+  }
+
+  // ===== NORMAL (PLAIN TEXT) MODE =====
+  return (
+    <>
+      {toolbarButtons}
+      {tabBar}
+      {searchReplacePanel}
+      {statsPanel}
+
+      {/* Format tools - only in plain text mode */}
+      {showFormatTools && (
+        <div className="mb-3 p-3 border border-black bg-gray-50 rounded-sm">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-semibold text-gray-800">Text Formatting</h3>
             <button
-              onClick={() => setShowStats(false)}
-              className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
+              onClick={() => setShowFormatTools(false)}
+              className="text-xs text-gray-500 hover:text-black"
             >
               Close
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-3 border border-black">
-              <div className="text-2xl font-bold text-blue-600">{textStats.words.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Words</div>
-            </div>
-
-            <div className="bg-white p-3 border border-black">
-              <div className="text-2xl font-bold text-green-600">{textStats.characters.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Characters (with spaces)</div>
-            </div>
-
-            <div className="bg-white p-3 border border-black">
-              <div className="text-2xl font-bold text-purple-600">{textStats.charactersNoSpaces.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Characters (no spaces)</div>
-            </div>
-
-            <div className="bg-white p-3 border border-black">
-              <div className="text-2xl font-bold text-orange-600">{textStats.lines.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Lines</div>
-            </div>
-
-            <div className="bg-white p-3 border border-black">
-              <div className="text-2xl font-bold text-red-600">{textStats.paragraphs.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Paragraphs</div>
-            </div>
-
-            <div className="bg-white p-3 border border-black">
-              <div className="text-2xl font-bold text-indigo-600">
-                {textStats.readingTime} {textStats.readingTime === 1 ? 'min' : 'mins'}
+          <div className="space-y-2">
+            <div>
+              <div className="text-xs text-gray-400 mb-1">Case</div>
+              <div className="flex flex-wrap gap-1">
+                <button onClick={formatToUpperCase} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="UPPERCASE">UPPER</button>
+                <button onClick={formatToLowerCase} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="lowercase">lower</button>
+                <button onClick={formatToTitleCase} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Title Case">Title</button>
+                <button onClick={formatToSentenceCase} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Sentence case">Sentence</button>
+                <button onClick={formatCapitalizeLines} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Capitalize lines">Cap Lines</button>
               </div>
-              <div className="text-sm text-gray-600">Reading time</div>
             </div>
 
-            <div className="bg-white p-3 border border-black">
-              <div className="text-2xl font-bold text-teal-600">
-                {textStats.words > 0 ? (textStats.characters / textStats.words).toFixed(1) : '0'}
+            <div>
+              <div className="text-xs text-gray-400 mb-1">Cleanup</div>
+              <div className="flex flex-wrap gap-1">
+                <button onClick={formatToParagraph} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Merge to paragraph">Paragraph</button>
+                <button onClick={formatRemoveExtraSpaces} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Remove extra spaces">Clean</button>
+                <button onClick={formatRemoveSpacing} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Remove spacing">No Spacing</button>
               </div>
-              <div className="text-sm text-gray-600">Avg chars/word</div>
             </div>
 
-            <div className="bg-white p-3 border border-black">
-              <div className="text-2xl font-bold text-pink-600">
-                {textStats.lines > 0 ? (textStats.words / textStats.lines).toFixed(1) : '0'}
+            <div>
+              <div className="text-xs text-gray-400 mb-1">Line prefix (select text first)</div>
+              <div className="flex flex-wrap gap-1">
+                <button onClick={addTabToSelectedLines} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Ctrl+Shift+T">Tab</button>
+                <button onClick={addSpaceToSelectedLines} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Ctrl+Shift+S">Space</button>
+                <button onClick={addBulletToSelectedLines} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Ctrl+Shift+B">Bullet</button>
+                <button onClick={addDashToSelectedLines} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Ctrl+Shift+D">Dash</button>
+                <button onClick={addPlusToSelectedLines} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Ctrl+Shift+P">Plus</button>
+                <button onClick={addAsteriskToSelectedLines} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Ctrl+Shift+A">Star</button>
+                <button onClick={addNumberToSelectedLines} className="px-2.5 py-1 text-xs bg-white hover:bg-gray-100 border border-gray-300 rounded-sm" title="Ctrl+Shift+N">1. 2. 3.</button>
               </div>
-              <div className="text-sm text-gray-600">Avg words/line</div>
-            </div>
-          </div>
-
-          <div className="mt-4 p-3 bg-white border border-black">
-            <div className="text-sm text-gray-600 space-y-1">
-              <div>💡 <strong>Reading time</strong> is calculated based on an average reading speed of 200 words/minute</div>
-              <div>📖 <strong>Paragraphs</strong> are the number of lines with content (excluding empty lines)</div>
-              <div>⚡ <strong>Statistics</strong> are automatically updated when you edit text</div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Format buttons */}
-      <div className="mb-3">
-   <div className="flex flex-wrap gap-2">
-          {/* Text formatting buttons */}
-          <div className="flex flex-wrap gap-1 mr-4">
-            <button
-              onClick={formatToParagraph}
-              className="px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 border border-blue-300 rounded"
-              title="Convert to Paragraph (selected text or all text)"
-            >
-              Paragraph
-            </button>
-            <button
-              onClick={formatToUpperCase}
-              className="px-3 py-1 text-xs bg-green-100 hover:bg-green-200 border border-green-300 rounded"
-              title="UPPERCASE (selected text or all text)"
-            >
-              UPPER
-            </button>
-            <button
-              onClick={formatToLowerCase}
-              className="px-3 py-1 text-xs bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 rounded"
-              title="lowercase (selected text or all text)"
-            >
-              lower
-            </button>
-            <button
-              onClick={formatToTitleCase}
-              className="px-3 py-1 text-xs bg-purple-100 hover:bg-purple-200 border border-purple-300 rounded"
-              title="Title Case Each Word (selected text or all text)"
-            >
-              Title
-            </button>
-            <button
-              onClick={formatToSentenceCase}
-              className="px-3 py-1 text-xs bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 rounded"
-              title="Sentence case (selected text or all text)"
-            >
-              Sentence
-            </button>
-            <button
-              onClick={formatCapitalizeLines}
-              className="px-3 py-1 text-xs bg-pink-100 hover:bg-pink-200 border border-pink-300 rounded"
-              title="Capitalize each line (selected text or all text)"
-            >
-              Cap Lines
-            </button>
-            <button
-              onClick={formatRemoveExtraSpaces}
-              className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 border border-red-300 rounded"
-              title="Remove extra spaces (selected text or all text)"
-            >
-              Clean
-            </button>
-            <button
-              onClick={formatRemoveSpacing}
-              className="px-3 py-1 text-xs bg-orange-100 hover:bg-orange-200 border border-orange-300 rounded"
-              title="Remove spacing between paragraphs (selected text or all text)"
-            >
-              No Spacing
-            </button>
-          </div>
-
-          {/* Line formatting buttons */}
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={addTabToSelectedLines}
-              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded"
-              title="Add Tab to selected lines (Ctrl+Shift+T)"
-            >
-              → Tab
-            </button>
-            <button
-              onClick={addSpaceToSelectedLines}
-              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded"
-              title="Add Space to selected lines (Ctrl+Shift+S)"
-            >
-              → Space
-            </button>
-            <button
-              onClick={addBulletToSelectedLines}
-              className="px-3 py-1 text-xs bg-orange-100 hover:bg-orange-200 border border-orange-300 rounded"
-              title="Add Bullet to selected lines (Ctrl+Shift+B)"
-            >
-              • Bullet
-            </button>
-            <button
-              onClick={addDashToSelectedLines}
-              className="px-3 py-1 text-xs bg-teal-100 hover:bg-teal-200 border border-teal-300 rounded"
-              title="Add Dash to selected lines (Ctrl+Shift+D)"
-            >
-              - Dash
-            </button>
-            <button
-              onClick={addPlusToSelectedLines}
-              className="px-3 py-1 text-xs bg-cyan-100 hover:bg-cyan-200 border border-cyan-300 rounded"
-              title="Add Plus to selected lines (Ctrl+Shift+P)"
-            >
-              + Plus
-            </button>
-            <button
-              onClick={addAsteriskToSelectedLines}
-              className="px-3 py-1 text-xs bg-lime-100 hover:bg-lime-200 border border-lime-300 rounded"
-              title="Add Asterisk to selected lines (Ctrl+Shift+A)"
-            >
-              * Star
-            </button>
-            <button
-              onClick={addNumberToSelectedLines}
-              className="px-3 py-1 text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded"
-              title="Add Numbers to selected lines (Ctrl+Shift+N)"
-            >
-              1. Numbers
-            </button>
-          </div>
-        </div>
-
-      </div>
-
       <textarea
+        ref={textareaRef}
         onChange={editTextNotes}
         spellCheck="true"
         value={selectedTab?.notes ?? ""}
         placeholder="Enter content"
         rows={15}
-        className="w-full outline-none border min-h-100 border-black p-3 min-h-fit text-xl text-mono"
+        className="w-full outline-none border border-black p-3 min-h-[400px] text-sm font-mono resize-y"
       />
 
-      <div className="flex justify-between items-center">
-        <span>Last modified: {selectedTab?.date}</span>
-        <div className="flex items-center space-x-4 text-sm text-gray-600">
-          <span>{textStats.words} words</span>
-          <span>{textStats.characters} chars</span>
-          <span>{textStats.lines} lines</span>
-          {textStats.readingTime > 0 && (
-            <span>~{textStats.readingTime} min read</span>
-          )}
-        </div>
-      </div>
+      {footerBar}
     </>
   );
 };

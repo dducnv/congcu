@@ -55,3 +55,165 @@ body {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
 }
+
+/* Markdown preview styles for Quick Note */
+.prose-quicknote {
+  font-size: 0.925rem;
+  line-height: 1.7;
+  color: #1a1a1a;
+}
+
+.prose-quicknote h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #e5e7eb;
+  line-height: 1.3;
+}
+
+.prose-quicknote h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid #f3f4f6;
+  line-height: 1.3;
+}
+
+.prose-quicknote h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+  line-height: 1.4;
+}
+
+.prose-quicknote h4,
+.prose-quicknote h5,
+.prose-quicknote h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.3rem;
+}
+
+.prose-quicknote p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-quicknote strong {
+  font-weight: 600;
+}
+
+.prose-quicknote a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-quicknote a:hover {
+  color: #1d4ed8;
+}
+
+.prose-quicknote blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.prose-quicknote ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.prose-quicknote ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.prose-quicknote li {
+  margin: 0.2rem 0;
+}
+
+.prose-quicknote li > ul,
+.prose-quicknote li > ol {
+  margin: 0.1rem 0;
+}
+
+.prose-quicknote code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85em;
+  background-color: #f3f4f6;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+  border: 1px solid #e5e7eb;
+}
+
+.prose-quicknote pre {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.prose-quicknote pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.prose-quicknote hr {
+  border: none;
+  border-top: 1px solid #d1d5db;
+  margin: 1.25rem 0;
+}
+
+.prose-quicknote table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.875rem;
+}
+
+.prose-quicknote th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+}
+
+.prose-quicknote td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.prose-quicknote img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+}
+
+.prose-quicknote input[type="checkbox"] {
+  margin-right: 0.4rem;
+  accent-color: #000;
+}
+
+.prose-quicknote del {
+  color: #9ca3af;
+}
