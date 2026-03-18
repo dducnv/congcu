@@ -49,26 +49,8 @@ type TextareaQuicknoteItem = {
   id: string;
 };
 
-function HighlightedCode({ className, children, ...props }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) {
-  const codeRef = useRef<HTMLElement>(null);
-  const match = /language-(\w+)/.exec(className || '');
-  const code = String(children).replace(/\n$/, '');
-
-  useEffect(() => {
-    if (codeRef.current && match) {
-      codeRef.current.removeAttribute('data-highlighted');
-      hljs.highlightElement(codeRef.current);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, match?.[1]]);
-
-  if (match) {
-    return <code ref={codeRef} className={className} {...props}>{children}</code>;
-  }
-  return <code className={className} {...props}>{children}</code>;
-}
-
 type ViewMode = "split" | "editor" | "preview";
+type ThemeMode = "light" | "dark" | "deepdark" | "sepia" | "lightgray";
 
 type TocItem = {
   level: number;
@@ -98,12 +80,24 @@ export const TextareaQuicknote = () => {
   const [markdownMode, setMarkdownMode] = useState(false);
   const [showFormatTools, setShowFormatTools] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
+  const [theme, setTheme] = useState<ThemeMode>("light");
   const [showToc, setShowToc] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const isScrollSyncing = useRef(false);
+
+  // Theme configurations
+  const themes: Record<ThemeMode, { bg: string, text: string, border: string, secondaryBg: string, accent: string, prose: string }> = {
+    light: { bg: "bg-white", text: "text-black", border: "border-black", secondaryBg: "bg-gray-100", accent: "bg-gray-50", prose: "" },
+    dark: { bg: "bg-[#1e1e1e]", text: "text-[#d4d4d4]", border: "border-[#333]", secondaryBg: "bg-[#252526]", accent: "bg-[#2d2d2d]", prose: "prose-invert opacity-90" },
+    deepdark: { bg: "bg-black", text: "text-white", border: "border-gray-800", secondaryBg: "bg-[#111]", accent: "bg-[#0a0a0a]", prose: "prose-invert" },
+    sepia: { bg: "bg-[#f4ecd8]", text: "text-[#5b4636]", border: "border-[#d3c0a8]", secondaryBg: "bg-[#e8dec2]", accent: "bg-[#fcf5e5]", prose: "sepia-prose" },
+    lightgray: { bg: "bg-[#f0f0f0]", text: "text-[#333]", border: "border-[#ccc]", secondaryBg: "bg-[#e0e0e0]", accent: "bg-[#f5f5f5]", prose: "" }
+  };
+
+  const currentTheme = themes[theme];
 
   // Popular emojis for quick access
   const quickEmojis = ["😀", "😂", "🥰", "👍", "🔥", "✨", "🚀", "💡", "✅", "❌", "📝", "📌", "📅", "🌈"];
@@ -858,8 +852,120 @@ ${previewRef.current.innerHTML}
 
   const markdownContent = useMemo(() => {
     if (!markdownMode || !selectedTab?.notes) return null;
-    return selectedTab.notes;
+    // Pre-process internal links: [[Tab Name]] -> [Tab Name](tab-link:Tab Name)
+    return selectedTab.notes.replace(/\[\[(.*?)\]\]/g, (match, p1) => {
+      return `[${p1}](tab-link:${p1})`;
+    });
   }, [markdownMode, selectedTab?.notes]);
+
+  function handleInternalLink(tabName: string) {
+    const targetTab = textNotesList.find(t => t.file_name.toLowerCase() === tabName.toLowerCase());
+    if (targetTab) {
+      setSelectedTab(targetTab);
+    } else {
+      alert(`Tab "${tabName}" not found`);
+    }
+  }
+
+  // ===== Mermaid support =====
+  useEffect(() => {
+    if (markdownMode && typeof window !== 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+      script.async = true;
+      script.onload = () => {
+        (window as any).mermaid?.initialize({ 
+          startOnLoad: true,
+          theme: 'default',
+          securityLevel: 'loose',
+        });
+      };
+      document.body.appendChild(script);
+      return () => {
+        const existingScript = document.querySelector(`script[src="${script.src}"]`);
+        if (existingScript) document.body.removeChild(existingScript);
+      };
+    }
+  }, [markdownMode]);
+
+  const MermaidDiagram = ({ code }: { code: string }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      if (containerRef.current && (window as any).mermaid) {
+        containerRef.current.removeAttribute('data-processed');
+        (window as any).mermaid.contentLoaded();
+        // Force re-render mermaid
+        const id = 'mermaid-' + Math.random().toString(36).substr(2, 9);
+        try {
+          (window as any).mermaid.render(id, code).then((res: any) => {
+            if (containerRef.current) {
+              containerRef.current.innerHTML = res.svg;
+            }
+          });
+        } catch (e) {
+          console.error("Mermaid render error", e);
+        }
+      }
+    }, [code]);
+
+    return <div ref={containerRef} className="mermaid flex justify-center my-4 overflow-x-auto">{code}</div>;
+  };
+
+  function HighlightedCode({ className, children, ...props }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) {
+    const codeRef = useRef<HTMLElement>(null);
+    const match = /language-(\w+)/.exec(className || '');
+    const code = String(children).replace(/\n$/, '');
+
+    useEffect(() => {
+      if (codeRef.current && match && match[1] !== 'mermaid') {
+        codeRef.current.removeAttribute('data-highlighted');
+        hljs.highlightElement(codeRef.current);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [code, match?.[1]]);
+
+    if (match?.[1] === 'mermaid') {
+      return <MermaidDiagram code={code} />;
+    }
+
+    const copyCode = () => {
+      navigator.clipboard.writeText(code);
+      alert("Code copied!");
+    };
+
+    if (match) {
+      return (
+        <div className="relative group/code">
+          <button 
+            onClick={copyCode}
+            className="absolute top-2 right-2 p-1.5 bg-gray-700 text-white text-[10px] rounded opacity-0 group-hover/code:opacity-100 transition-opacity z-10 hover:bg-black"
+          >
+            COPY
+          </button>
+          <code ref={codeRef} className={className} {...props}>{children}</code>
+        </div>
+      );
+    }
+    return <code className={className} {...props}>{children}</code>;
+  }
+
+  const linkRenderer = useCallback(({ href, children, ...props }: any) => {
+    if (href?.startsWith('tab-link:')) {
+      const tabName = decodeURIComponent(href.replace('tab-link:', ''));
+      return (
+        <a
+          href="#"
+          onClick={(e) => { e.preventDefault(); handleInternalLink(tabName); }}
+          className="text-blue-600 hover:underline font-medium border-b border-dashed border-blue-400 decoration-blue-400"
+          title={`Go to tab: ${tabName}`}
+        >
+          {children}
+        </a>
+      );
+    }
+    return <a href={href} {...props} target="_blank" rel="noopener noreferrer">{children}</a>;
+  }, [textNotesList]);
 
   // ===== Line numbers for editor =====
   const lineCount = useMemo(() => {
@@ -1062,6 +1168,22 @@ ${previewRef.current.innerHTML}
             TOC
           </button>
         )}
+        
+        {markdownMode && (
+          <div className="flex items-center border border-gray-300 rounded overflow-hidden ml-1">
+            {(Object.keys(themes) as ThemeMode[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTheme(t)}
+                className={`w-6 h-6 flex items-center justify-center text-[10px] transition-all ${theme === t ? 'ring-2 ring-blue-500 z-10' : ''}`}
+                style={{ backgroundColor: themes[t].bg.replace('bg-', '').replace('[', '').replace(']', ''), color: themes[t].text.replace('text-', '').replace('[', '').replace(']', '') }}
+                title={`Theme: ${t}`}
+              >
+                {t.charAt(0).toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -1236,9 +1358,9 @@ ${previewRef.current.innerHTML}
   const showPreview = viewMode === "split" || viewMode === "preview";
 
   const editorPanel = (
-    <div className={`flex flex-col min-h-0 ${viewMode === 'split' ? 'w-1/2 border-r border-black' : 'w-full'}`}>
+    <div className={`flex flex-col min-h-0 ${viewMode === 'split' ? `w-1/2 border-r ${currentTheme.border}` : 'w-full'} ${currentTheme.bg} ${currentTheme.text}`}>
       {!isFocusMode && (
-        <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium flex-shrink-0">
+        <div className={`px-3 py-1.5 ${currentTheme.secondaryBg} border-b ${currentTheme.border} text-xs opacity-60 font-medium flex-shrink-0`}>
           EDITOR
         </div>
       )}
@@ -1246,8 +1368,8 @@ ${previewRef.current.innerHTML}
       <div className="flex flex-1 min-h-0">
         {/* Line numbers */}
         {!isFocusMode && (
-          <div className="flex-shrink-0 bg-gray-50 border-r border-gray-200 text-right select-none overflow-hidden">
-            <div className="p-3 text-xs font-mono text-gray-400 leading-[1.7]">
+          <div className={`flex-shrink-0 ${currentTheme.accent} border-r ${currentTheme.border} text-right select-none overflow-hidden`}>
+            <div className="p-3 text-xs font-mono opacity-30 leading-[1.7]">
               {Array.from({ length: lineCount }, (_, i) => (
                 <div key={i}>{i + 1}</div>
               ))}
@@ -1262,21 +1384,21 @@ ${previewRef.current.innerHTML}
           spellCheck="true"
           value={selectedTab?.notes ?? ""}
           placeholder={"Write markdown here...\n\n# Heading 1\n## Heading 2\n\n**Bold** *Italic* ~~Strikethrough~~\n\n- List item\n- [ ] Task\n\n```code block```"}
-          className={`flex-1 w-full outline-none p-3 text-sm font-mono resize-none leading-[1.7] ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}
+          className={`flex-1 w-full outline-none p-3 text-sm font-mono resize-none leading-[1.7] bg-transparent ${currentTheme.text} ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}
         />
       </div>
     </div>
   );
 
   const previewPanel = (
-    <div className={`flex flex-col min-h-0 ${viewMode === 'split' ? 'w-1/2' : 'w-full'}`}>
+    <div className={`flex flex-col min-h-0 ${viewMode === 'split' ? 'w-1/2' : 'w-full'} ${currentTheme.bg} ${currentTheme.text}`}>
       {!isFocusMode && (
-        <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium flex-shrink-0">
+        <div className={`px-3 py-1.5 ${currentTheme.secondaryBg} border-b ${currentTheme.border} text-xs opacity-60 font-medium flex-shrink-0`}>
           PREVIEW
         </div>
       )}
       <div ref={previewRef} onScroll={viewMode === 'split' ? handlePreviewScroll : undefined}
-        className={`flex-1 p-4 overflow-auto prose-quicknote ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}>
+        className={`flex-1 p-4 overflow-auto prose-quicknote ${currentTheme.prose} ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}>
         {markdownContent ? (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -1288,6 +1410,7 @@ ${previewRef.current.innerHTML}
               h4: headingRenderer(4),
               h5: headingRenderer(5),
               h6: headingRenderer(6),
+              a: linkRenderer,
             }}
           >
             {markdownContent}
@@ -1302,7 +1425,7 @@ ${previewRef.current.innerHTML}
   // ===== MARKDOWN FULL-SCREEN MODE =====
   if (markdownMode) {
     return (
-      <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      <div className={`fixed inset-0 z-50 ${currentTheme.bg} ${currentTheme.text} flex flex-col`}>
         {!isFocusMode && (
           <div className="px-4 pt-3 flex-shrink-0">
             {toolbarButtons}
@@ -1316,17 +1439,17 @@ ${previewRef.current.innerHTML}
         )}
 
         {/* TOC sidebar + editor area */}
-        <div className={`flex flex-1 ${!isFocusMode ? 'border-t border-black' : ''} min-h-0`}>
+        <div className={`flex flex-1 ${!isFocusMode ? `border-t ${currentTheme.border}` : ''} min-h-0`}>
           {/* TOC sidebar */}
           {!isFocusMode && showToc && tocItems.length > 0 && (
-            <div className="w-56 flex-shrink-0 border-r border-black bg-gray-50 overflow-y-auto">
-              <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium">
+            <div className={`w-56 flex-shrink-0 border-r ${currentTheme.border} ${currentTheme.accent} overflow-y-auto`}>
+              <div className={`px-3 py-1.5 ${currentTheme.secondaryBg} border-b ${currentTheme.border} text-xs opacity-60 font-medium`}>
                 TABLE OF CONTENTS
               </div>
               <nav className="p-2">
                 {tocItems.map((item, i) => (
                   <button key={i} onClick={() => scrollToHeading(item.id)}
-                    className="block w-full text-left text-xs py-1 px-2 hover:bg-gray-200 rounded-sm truncate transition-colors"
+                    className={`block w-full text-left text-xs py-1 px-2 hover:${currentTheme.secondaryBg} rounded-sm truncate transition-colors`}
                     style={{ paddingLeft: `${(item.level - 1) * 12 + 8}px` }}>
                     {item.text}
                   </button>
@@ -1343,7 +1466,7 @@ ${previewRef.current.innerHTML}
         </div>
 
         {!isFocusMode && (
-          <div className="px-4 py-1.5 border-t border-gray-200 flex-shrink-0">
+          <div className={`px-4 py-1.5 border-t ${currentTheme.border} opacity-50 flex-shrink-0`}>
             {footerBar}
           </div>
         )}
