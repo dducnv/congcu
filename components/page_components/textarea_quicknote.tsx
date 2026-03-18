@@ -89,6 +89,7 @@ export const TextareaQuicknote = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiSearch, setEmojiSearch] = useState("");
+  const [selectedEmojiGroup, setSelectedEmojiGroup] = useState("smileys-emotion");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const isScrollSyncing = useRef(false);
@@ -112,14 +113,28 @@ export const TextareaQuicknote = () => {
 
   const currentFont = fontConfig[fontSize];
 
-  // Filtered emojis based on search
+  const emojiGroupIcons: Record<string, string> = {
+    "smileys-emotion": "😀",
+    "people-body": "👋",
+    "animals-nature": "🐶",
+    "food-drink": "🍎",
+    "travel-places": "🚗",
+    "activities": "⚽",
+    "objects": "💡",
+    "symbols": "❤️",
+    "flags": "🏁"
+  };
+
+  // Filtered emojis based on group and search
   const filteredEmojis = useMemo(() => {
-    if (!emojiSearch) return emojiData.slice(0, 49);
-    return emojiData.filter(e => 
-      e.unicodeName.toLowerCase().includes(emojiSearch.toLowerCase()) ||
-      e.slug.toLowerCase().includes(emojiSearch.toLowerCase())
-    ).slice(0, 49);
-  }, [emojiSearch]);
+    if (emojiSearch) {
+      return emojiData.filter(e => 
+        e.unicodeName.toLowerCase().includes(emojiSearch.toLowerCase()) ||
+        e.slug.toLowerCase().includes(emojiSearch.toLowerCase())
+      ).slice(0, 100);
+    }
+    return emojiData.filter(e => e.group === selectedEmojiGroup).slice(0, 100);
+  }, [emojiSearch, selectedEmojiGroup]);
 
   const dateTimeNow = new Date().toLocaleString();
 
@@ -1358,7 +1373,7 @@ ${previewRef.current.innerHTML}
       <div className="relative">
         <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={mdToolbarBtnClass} title="Insert Emoji">😀</button>
         {showEmojiPicker && (
-          <div className="absolute top-full left-0 mt-2 p-2 bg-white border border-black shadow-xl z-[100] w-[260px]">
+          <div className="absolute top-full left-0 mt-2 p-2 bg-white border border-black shadow-xl z-[100] w-[280px]">
             <input 
               type="text" 
               placeholder="Search emoji..." 
@@ -1367,6 +1382,21 @@ ${previewRef.current.innerHTML}
               className="w-full px-2 py-1 mb-2 text-xs border border-gray-300 focus:outline-none focus:border-black text-black"
               autoFocus
             />
+            {/* Group Tabs */}
+            {!emojiSearch && (
+              <div className="flex items-center justify-between mb-2 border-b border-gray-100 pb-1 overflow-x-auto no-scrollbar">
+                {Object.entries(emojiGroupIcons).map(([group, icon]) => (
+                  <button 
+                    key={group} 
+                    onClick={() => setSelectedEmojiGroup(group)}
+                    className={`p-1 rounded transition-colors ${selectedEmojiGroup === group ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                    title={group.replace('-', ' ')}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="grid grid-cols-7 gap-1 max-h-[200px] overflow-y-auto custom-scrollbar">
               {filteredEmojis.map(emoji => (
                 <button 
