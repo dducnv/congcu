@@ -42,6 +42,8 @@ hljs.registerLanguage("c", cpp);
 hljs.registerLanguage("markdown", markdown);
 hljs.registerLanguage("md", markdown);
 
+import emojiData from "@/core/data_local/emoji.json";
+
 type TextareaQuicknoteItem = {
   date: string;
   notes: string;
@@ -84,6 +86,7 @@ export const TextareaQuicknote = () => {
   const [showToc, setShowToc] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiSearch, setEmojiSearch] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const isScrollSyncing = useRef(false);
@@ -91,7 +94,7 @@ export const TextareaQuicknote = () => {
   // Theme configurations
   const themes: Record<ThemeMode, { bg: string, text: string, border: string, secondaryBg: string, accent: string, prose: string }> = {
     light: { bg: "bg-white", text: "text-black", border: "border-black", secondaryBg: "bg-gray-100", accent: "bg-gray-50", prose: "" },
-    dark: { bg: "bg-[#1e1e1e]", text: "text-[#d4d4d4]", border: "border-[#333]", secondaryBg: "bg-[#252526]", accent: "bg-[#2d2d2d]", prose: "prose-invert opacity-90" },
+    dark: { bg: "bg-[#1e1e1e]", text: "text-[#d4d4d4]", border: "border-[#333]", secondaryBg: "bg-[#252526]", accent: "bg-[#2d2d2d]", prose: "prose-invert" },
     deepdark: { bg: "bg-black", text: "text-white", border: "border-gray-800", secondaryBg: "bg-[#111]", accent: "bg-[#0a0a0a]", prose: "prose-invert" },
     sepia: { bg: "bg-[#f4ecd8]", text: "text-[#5b4636]", border: "border-[#d3c0a8]", secondaryBg: "bg-[#e8dec2]", accent: "bg-[#fcf5e5]", prose: "sepia-prose" },
     lightgray: { bg: "bg-[#f0f0f0]", text: "text-[#333]", border: "border-[#ccc]", secondaryBg: "bg-[#e0e0e0]", accent: "bg-[#f5f5f5]", prose: "" }
@@ -99,8 +102,14 @@ export const TextareaQuicknote = () => {
 
   const currentTheme = themes[theme];
 
-  // Popular emojis for quick access
-  const quickEmojis = ["😀", "😂", "🥰", "👍", "🔥", "✨", "🚀", "💡", "✅", "❌", "📝", "📌", "📅", "🌈"];
+  // Filtered emojis based on search
+  const filteredEmojis = useMemo(() => {
+    if (!emojiSearch) return emojiData.slice(0, 49);
+    return emojiData.filter(e => 
+      e.unicodeName.toLowerCase().includes(emojiSearch.toLowerCase()) ||
+      e.slug.toLowerCase().includes(emojiSearch.toLowerCase())
+    ).slice(0, 49);
+  }, [emojiSearch]);
 
   const dateTimeNow = new Date().toLocaleString();
 
@@ -1294,7 +1303,7 @@ ${previewRef.current.innerHTML}
   );
 
   const markdownToolbar = (
-    <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-black overflow-x-auto relative">
+    <div className={`flex flex-wrap items-center gap-1 px-3 py-1.5 ${currentTheme.secondaryBg} border-b ${currentTheme.border} relative z-40`}>
       <button onClick={() => insertMarkdown('bold')} className={mdToolbarBtnClass} title="Bold (Cmd+Shift+B)"><strong>B</strong></button>
       <button onClick={() => insertMarkdown('italic')} className={mdToolbarBtnClass} title="Italic (Cmd+Shift+I)"><em>I</em></button>
       <button onClick={() => insertMarkdown('heading')} className={mdToolbarBtnClass} title="Heading">H</button>
@@ -1324,10 +1333,27 @@ ${previewRef.current.innerHTML}
       <div className="relative">
         <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={mdToolbarBtnClass} title="Insert Emoji">😀</button>
         {showEmojiPicker && (
-          <div className="absolute top-full left-0 mt-1 p-2 bg-white border border-black shadow-lg z-50 grid grid-cols-7 gap-1 min-w-[200px]">
-            {quickEmojis.map(emoji => (
-              <button key={emoji} onClick={() => insertEmoji(emoji)} className="p-1.5 hover:bg-gray-100 rounded text-lg">{emoji}</button>
-            ))}
+          <div className="absolute top-full left-0 mt-2 p-2 bg-white border border-black shadow-xl z-[100] w-[260px]">
+            <input 
+              type="text" 
+              placeholder="Search emoji..." 
+              value={emojiSearch}
+              onChange={(e) => setEmojiSearch(e.target.value)}
+              className="w-full px-2 py-1 mb-2 text-xs border border-gray-300 focus:outline-none focus:border-black text-black"
+              autoFocus
+            />
+            <div className="grid grid-cols-7 gap-1 max-h-[200px] overflow-y-auto custom-scrollbar">
+              {filteredEmojis.map(emoji => (
+                <button 
+                  key={emoji.slug} 
+                  onClick={() => insertEmoji(emoji.character)} 
+                  className="p-1 hover:bg-gray-100 rounded text-lg transition-colors"
+                  title={emoji.unicodeName}
+                >
+                  {emoji.character}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -1398,7 +1424,8 @@ ${previewRef.current.innerHTML}
         </div>
       )}
       <div ref={previewRef} onScroll={viewMode === 'split' ? handlePreviewScroll : undefined}
-        className={`flex-1 p-4 overflow-auto prose-quicknote ${currentTheme.prose} ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}>
+        className={`flex-1 p-4 overflow-auto prose-quicknote ${currentTheme.prose} ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}
+        style={{ color: 'inherit' }}>
         {markdownContent ? (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
