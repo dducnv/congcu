@@ -99,11 +99,50 @@ export const TextareaQuicknote = () => {
   const [showFormatTools, setShowFormatTools] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [showToc, setShowToc] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const isScrollSyncing = useRef(false);
 
+  // Popular emojis for quick access
+  const quickEmojis = ["😀", "😂", "🥰", "👍", "🔥", "✨", "🚀", "💡", "✅", "❌", "📝", "📌", "📅", "🌈"];
+
   const dateTimeNow = new Date().toLocaleString();
+
+  function insertTimestamp() {
+    const now = new Date();
+    const timestamp = `[${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}] `;
+    replaceTextPreservingUndo(timestamp);
+  }
+
+  function clearFormatting() {
+    if (!selectedTab?.notes) return;
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    if (start === end) return;
+
+    const selectedText = selectedTab.notes.substring(start, end);
+    // Regex to remove common markdown patterns
+    const cleanedText = selectedText
+      .replace(/(\*\*|__)(.*?)\1/g, '$2') // bold
+      .replace(/(\*|_)(.*?)\1/g, '$2')    // italic
+      .replace(/(~~)(.*?)\1/g, '$2')      // strikethrough
+      .replace(/(`)(.*?)\1/g, '$2')       // inline code
+      .replace(/^#{1,6}\s+/gm, '')        // headings
+      .replace(/^>\s+/gm, '')             // blockquotes
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // links
+      .replace(/<mark>(.*?)<\/mark>/g, '$1'); // highlights
+
+    replaceTextPreservingUndo(cleanedText, { start, end });
+  }
+
+  function insertEmoji(emoji: string) {
+    replaceTextPreservingUndo(emoji);
+    setShowEmojiPicker(false);
+  }
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -150,20 +189,29 @@ export const TextareaQuicknote = () => {
     requestAnimationFrame(() => { isScrollSyncing.current = false; });
   }, []);
 
-  // ===== Auto-close pairs =====
+  // ===== Auto-close pairs & Tab handling =====
   const handleKeyDownTextarea = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!markdownMode) return;
-
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    // 1. Handle Tab key (Works in both modes)
+    if (e.key === "Tab") {
+      e.preventDefault();
+      // Use execCommand to preserve Undo/Redo stack
+      document.execCommand("insertText", false, "\t");
+      return;
+    }
+
+    // 2. Auto-close pairs (Markdown mode only)
+    if (!markdownMode) return;
+
     const pairs: Record<string, string> = {
-      '`': '`',
-      '*': '*',
-      '_': '_',
-      '~': '~',
-      '[': ']',
-      '(': ')',
+      "`": "`",
+      "*": "*",
+      "_": "_",
+      "~": "~",
+      "[": "]",
+      "(": ")",
     };
 
     const closingChars = new Set(Object.values(pairs));
@@ -181,14 +229,14 @@ export const TextareaQuicknote = () => {
     if (pairs[e.key]) {
       e.preventDefault();
       const selected = text.substring(start, end);
-      const newText = text.substring(0, start) + e.key + selected + pairs[e.key] + text.substring(end);
-      // Must use native setter to trigger React onChange
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
-      nativeInputValueSetter?.call(textarea, newText);
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      const insert = e.key + selected + pairs[e.key];
+
+      // Use execCommand to preserve Undo/Redo stack
+      document.execCommand("insertText", false, insert);
+
       // Place cursor inside pairs, or after selected text
       const cursorPos = selected ? start + 1 + selected.length : start + 1;
-      setTimeout(() => textarea.setSelectionRange(cursorPos, cursorPos), 0);
+      textarea.setSelectionRange(cursorPos, cursorPos);
     }
   }, [markdownMode]);
 
@@ -536,6 +584,22 @@ ${previewRef.current.innerHTML}
     localStorage.setItem("textNotesList", JSON.stringify(newTabList));
   }, [textNotesList, selectedTab?.id]);
 
+  // Helper to update text while preserving Undo/Redo history
+  const replaceTextPreservingUndo = useCallback((newText: string, range?: { start: number, end: number }) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.focus();
+    
+    if (range) {
+      textarea.setSelectionRange(range.start, range.end);
+    } else if (textarea.selectionStart === textarea.selectionEnd && newText === textarea.value) {
+      // If we're replacing everything and nothing is selected
+      textarea.select();
+    }
+    
+    document.execCommand('insertText', false, newText);
+  }, []);
+
   function formatToParagraph() {
     if (!selectedTab || !selectedTab.notes) { alert("No content to format"); return; }
     const textarea = textareaRef.current;
@@ -545,9 +609,10 @@ ${previewRef.current.innerHTML}
     if (start !== end) {
       const selectedText = selectedTab.notes.substring(start, end);
       const formattedText = selectedText.split('\n').map(line => line.trim()).filter(line => line.length > 0).join(' ');
-      updateTextContent(selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end));
+      replaceTextPreservingUndo(formattedText, { start, end });
     } else {
-      updateTextContent(selectedTab.notes.split('\n').map(line => line.trim()).filter(line => line.length > 0).join(' '));
+      const formattedText = selectedTab.notes.split('\n').map(line => line.trim()).filter(line => line.length > 0).join(' ');
+      replaceTextPreservingUndo(formattedText);
     }
   }
 
@@ -558,9 +623,9 @@ ${previewRef.current.innerHTML}
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     if (start !== end) {
-      updateTextContent(selectedTab.notes.substring(0, start) + selectedTab.notes.substring(start, end).toUpperCase() + selectedTab.notes.substring(end));
+      replaceTextPreservingUndo(selectedTab.notes.substring(start, end).toUpperCase(), { start, end });
     } else {
-      updateTextContent(selectedTab.notes.toUpperCase());
+      replaceTextPreservingUndo(selectedTab.notes.toUpperCase());
     }
   }
 
@@ -571,9 +636,9 @@ ${previewRef.current.innerHTML}
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     if (start !== end) {
-      updateTextContent(selectedTab.notes.substring(0, start) + selectedTab.notes.substring(start, end).toLowerCase() + selectedTab.notes.substring(end));
+      replaceTextPreservingUndo(selectedTab.notes.substring(start, end).toLowerCase(), { start, end });
     } else {
-      updateTextContent(selectedTab.notes.toLowerCase());
+      replaceTextPreservingUndo(selectedTab.notes.toLowerCase());
     }
   }
 
@@ -585,9 +650,9 @@ ${previewRef.current.innerHTML}
     const end = textarea.selectionEnd;
     const titleCase = (s: string) => s.toLowerCase().split(' ').map(w => w.length === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     if (start !== end) {
-      updateTextContent(selectedTab.notes.substring(0, start) + titleCase(selectedTab.notes.substring(start, end)) + selectedTab.notes.substring(end));
+      replaceTextPreservingUndo(titleCase(selectedTab.notes.substring(start, end)), { start, end });
     } else {
-      updateTextContent(titleCase(selectedTab.notes));
+      replaceTextPreservingUndo(titleCase(selectedTab.notes));
     }
   }
 
@@ -599,9 +664,9 @@ ${previewRef.current.innerHTML}
     const end = textarea.selectionEnd;
     const sentenceCase = (s: string) => s.toLowerCase().replace(/(^\w|\.\s+\w)/g, c => c.toUpperCase());
     if (start !== end) {
-      updateTextContent(selectedTab.notes.substring(0, start) + sentenceCase(selectedTab.notes.substring(start, end)) + selectedTab.notes.substring(end));
+      replaceTextPreservingUndo(sentenceCase(selectedTab.notes.substring(start, end)), { start, end });
     } else {
-      updateTextContent(sentenceCase(selectedTab.notes));
+      replaceTextPreservingUndo(sentenceCase(selectedTab.notes));
     }
   }
 
@@ -613,9 +678,9 @@ ${previewRef.current.innerHTML}
     const end = textarea.selectionEnd;
     const capLines = (s: string) => s.split('\n').map(line => { const t = line.trim(); return t.length === 0 ? line : t.charAt(0).toUpperCase() + t.slice(1).toLowerCase(); }).join('\n');
     if (start !== end) {
-      updateTextContent(selectedTab.notes.substring(0, start) + capLines(selectedTab.notes.substring(start, end)) + selectedTab.notes.substring(end));
+      replaceTextPreservingUndo(capLines(selectedTab.notes.substring(start, end)), { start, end });
     } else {
-      updateTextContent(capLines(selectedTab.notes));
+      replaceTextPreservingUndo(capLines(selectedTab.notes));
     }
   }
 
@@ -627,9 +692,9 @@ ${previewRef.current.innerHTML}
     const end = textarea.selectionEnd;
     const clean = (s: string) => s.replace(/[ \t]+/g, ' ').split('\n').map(l => l.trim()).join('\n').replace(/\n\s*\n\s*\n/g, '\n\n').trim();
     if (start !== end) {
-      updateTextContent(selectedTab.notes.substring(0, start) + clean(selectedTab.notes.substring(start, end)) + selectedTab.notes.substring(end));
+      replaceTextPreservingUndo(clean(selectedTab.notes.substring(start, end)), { start, end });
     } else {
-      updateTextContent(clean(selectedTab.notes));
+      replaceTextPreservingUndo(clean(selectedTab.notes));
     }
   }
 
@@ -641,9 +706,9 @@ ${previewRef.current.innerHTML}
     const end = textarea.selectionEnd;
     const noSpace = (s: string) => s.replace(/\n\s*\n/g, '\n').split('\n').map(l => l.trim()).join('\n').trim();
     if (start !== end) {
-      updateTextContent(selectedTab.notes.substring(0, start) + noSpace(selectedTab.notes.substring(start, end)) + selectedTab.notes.substring(end));
+      replaceTextPreservingUndo(noSpace(selectedTab.notes.substring(start, end)), { start, end });
     } else {
-      updateTextContent(noSpace(selectedTab.notes));
+      replaceTextPreservingUndo(noSpace(selectedTab.notes));
     }
   }
 
@@ -660,8 +725,8 @@ ${previewRef.current.innerHTML}
       if (line.trim() === '') return line;
       return prefix + line.trim().replace(removePattern, '');
     }).join('\n');
-    updateTextContent(selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end));
-  }, [selectedTab?.notes, updateTextContent]);
+    replaceTextPreservingUndo(formattedText, { start, end });
+  }, [selectedTab?.notes, replaceTextPreservingUndo]);
 
   const addTabToSelectedLines = useCallback(() => formatSelectedText('\t'), [formatSelectedText]);
   const addSpaceToSelectedLines = useCallback(() => formatSelectedText(' '), [formatSelectedText]);
@@ -682,8 +747,8 @@ ${previewRef.current.innerHTML}
       if (line.trim() === '') return line;
       return ` ${i + 1}. ${line.trim().replace(removePattern, '')}`;
     }).join('\n');
-    updateTextContent(selectedTab.notes.substring(0, start) + formattedText + selectedTab.notes.substring(end));
-  }, [selectedTab?.notes, updateTextContent]);
+    replaceTextPreservingUndo(formattedText, { start, end });
+  }, [selectedTab?.notes, replaceTextPreservingUndo]);
 
   const searchInText = useCallback(() => {
     if (!searchTerm || !selectedTab?.notes) { setSearchResults([]); setCurrentSearchIndex(-1); return; }
@@ -813,8 +878,25 @@ ${previewRef.current.innerHTML}
     let cursorOffset = 0;
 
     switch (type) {
-      case "bold": before = "**"; after = "**"; insert = selected || "bold text"; break;
-      case "italic": before = "*"; after = "*"; insert = selected || "italic text"; break;
+      case "bold":
+      case "italic": {
+        const marker = type === "bold" ? "**" : "*";
+        if (selected) {
+          const match = selected.match(/^(\s*)(.*?)(\s*)$/);
+          if (match) {
+            const leading = match[1];
+            const content = match[2];
+            const trailing = match[3];
+            const textToInsert = leading + marker + (content || (type === "bold" ? "bold text" : "italic text")) + marker + trailing;
+            replaceTextPreservingUndo(textToInsert, { start, end });
+            const newCursorStart = start + leading.length + marker.length;
+            const newCursorEnd = newCursorStart + (content.length || (type === "bold" ? 9 : 11));
+            setTimeout(() => textarea.setSelectionRange(newCursorStart, newCursorEnd), 0);
+            return;
+          }
+        }
+        before = marker; after = marker; insert = selected || (type === "bold" ? "bold text" : "italic text"); break;
+      }
       case "heading": {
         const lineStart = text.lastIndexOf('\n', start - 1) + 1;
         const lineText = text.substring(lineStart, end);
@@ -822,28 +904,26 @@ ${previewRef.current.innerHTML}
         if (headingMatch) {
           const level = headingMatch[1].length;
           if (level >= 6) {
-            const newText = text.substring(0, lineStart) + lineText.replace(/^#{1,6}\s/, '') + text.substring(end);
-            updateTextContent(newText); textarea.focus();
-            setTimeout(() => textarea.setSelectionRange(lineStart, lineStart + lineText.length - level - 1), 0);
+            const newText = lineText.replace(/^#{1,6}\s/, '');
+            replaceTextPreservingUndo(newText, { start: lineStart, end });
+            setTimeout(() => textarea.setSelectionRange(lineStart, lineStart + newText.length), 0);
             return;
           }
-          const newText = text.substring(0, lineStart) + '#' + lineText + text.substring(end);
-          updateTextContent(newText); textarea.focus();
+          const newText = '#' + lineText;
+          replaceTextPreservingUndo(newText, { start: lineStart, end });
           setTimeout(() => textarea.setSelectionRange(start + 1, end + 1), 0);
           return;
         }
         const prefix = "## ";
-        const newText = text.substring(0, lineStart) + prefix + text.substring(lineStart);
-        updateTextContent(newText); textarea.focus();
+        replaceTextPreservingUndo(prefix, { start: lineStart, end: lineStart });
         setTimeout(() => textarea.setSelectionRange(start + prefix.length, end + prefix.length), 0);
         return;
       }
       case "ul": {
         if (selected) {
           const lines = selected.split('\n').map(l => l.trim() ? `- ${l.replace(/^[-*+]\s*/, '')}` : l).join('\n');
-          const newText = text.substring(0, start) + lines + text.substring(end);
-          updateTextContent(newText); textarea.focus();
-          setTimeout(() => textarea.setSelectionRange(start, start + lines.length), 0); return;
+          replaceTextPreservingUndo(lines, { start, end });
+          return;
         }
         before = "- "; insert = "list item"; break;
       }
@@ -851,27 +931,24 @@ ${previewRef.current.innerHTML}
         if (selected) {
           let num = 1;
           const lines = selected.split('\n').map(l => l.trim() ? `${num++}. ${l.replace(/^\d+\.\s*/, '')}` : l).join('\n');
-          const newText = text.substring(0, start) + lines + text.substring(end);
-          updateTextContent(newText); textarea.focus();
-          setTimeout(() => textarea.setSelectionRange(start, start + lines.length), 0); return;
+          replaceTextPreservingUndo(lines, { start, end });
+          return;
         }
         before = "1. "; insert = "list item"; break;
       }
       case "checklist": {
         if (selected) {
           const lines = selected.split('\n').map(l => l.trim() ? `- [ ] ${l.replace(/^[-*+]\s*(\[[ x]\]\s*)?/, '')}` : l).join('\n');
-          const newText = text.substring(0, start) + lines + text.substring(end);
-          updateTextContent(newText); textarea.focus();
-          setTimeout(() => textarea.setSelectionRange(start, start + lines.length), 0); return;
+          replaceTextPreservingUndo(lines, { start, end });
+          return;
         }
         before = "- [ ] "; insert = "task"; break;
       }
       case "blockquote": {
         if (selected) {
           const lines = selected.split('\n').map(l => `> ${l}`).join('\n');
-          const newText = text.substring(0, start) + lines + text.substring(end);
-          updateTextContent(newText); textarea.focus();
-          setTimeout(() => textarea.setSelectionRange(start, start + lines.length), 0); return;
+          replaceTextPreservingUndo(lines, { start, end });
+          return;
         }
         before = "> "; insert = "quote"; break;
       }
@@ -888,12 +965,13 @@ ${previewRef.current.innerHTML}
       default: return;
     }
 
-    const newText = text.substring(0, start) + before + insert + after + text.substring(end);
-    updateTextContent(newText); textarea.focus();
+    const textToInsert = before + insert + after;
+    replaceTextPreservingUndo(textToInsert, { start, end });
+    
     const newCursorStart = start + before.length + (cursorOffset || 0);
     const newCursorEnd = newCursorStart + insert.length - (cursorOffset || 0);
     setTimeout(() => textarea.setSelectionRange(newCursorStart, newCursorEnd), 0);
-  }, [selectedTab?.notes, updateTextContent]);
+  }, [selectedTab?.notes, replaceTextPreservingUndo]);
 
   // ===== Markdown keyboard shortcuts =====
   useEffect(() => {
@@ -1009,9 +1087,8 @@ ${previewRef.current.innerHTML}
         )}
 
         <button onClick={() => setMarkdownMode(!markdownMode)}
-          className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded transition-all ${
-            markdownMode ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-          }`}
+          className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded transition-all ${markdownMode ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
           title="Toggle Markdown preview">
           <span className="font-bold text-xs tracking-wide">MD</span>
           <div className={`relative w-8 h-4 rounded-full transition-colors ${markdownMode ? 'bg-gray-500' : 'bg-gray-300'}`}>
@@ -1095,10 +1172,18 @@ ${previewRef.current.innerHTML}
   );
 
   const markdownToolbar = (
-    <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-black overflow-x-auto">
+    <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-black overflow-x-auto relative">
       <button onClick={() => insertMarkdown('bold')} className={mdToolbarBtnClass} title="Bold (Cmd+Shift+B)"><strong>B</strong></button>
       <button onClick={() => insertMarkdown('italic')} className={mdToolbarBtnClass} title="Italic (Cmd+Shift+I)"><em>I</em></button>
       <button onClick={() => insertMarkdown('heading')} className={mdToolbarBtnClass} title="Heading">H</button>
+      <button onClick={() => {
+        const selected = selectedTab?.notes.substring(textareaRef.current?.selectionStart || 0, textareaRef.current?.selectionEnd || 0);
+        if (selected) {
+          replaceTextPreservingUndo(`<mark>${selected}</mark>`, { start: textareaRef.current?.selectionStart || 0, end: textareaRef.current?.selectionEnd || 0 });
+        } else {
+          replaceTextPreservingUndo("<mark>highlight</mark>");
+        }
+      }} className={mdToolbarBtnClass} title="Highlight text">High</button>
       <div className="w-px h-4 bg-gray-300 mx-0.5" />
       <button onClick={() => insertMarkdown('ul')} className={mdToolbarBtnClass} title="Unordered list (Cmd+Shift+U)">UL</button>
       <button onClick={() => insertMarkdown('ol')} className={mdToolbarBtnClass} title="Ordered list (Cmd+Shift+O)">OL</button>
@@ -1111,6 +1196,24 @@ ${previewRef.current.innerHTML}
       <button onClick={() => insertMarkdown('link')} className={mdToolbarBtnClass} title="Link (Cmd+Shift+L)">Link</button>
       <button onClick={() => insertMarkdown('image')} className={mdToolbarBtnClass} title="Image (Cmd+Shift+G)">Img</button>
       <button onClick={() => insertMarkdown('hr')} className={mdToolbarBtnClass} title="Horizontal rule">HR</button>
+      <div className="w-px h-4 bg-gray-300 mx-0.5" />
+      <button onClick={clearFormatting} className={mdToolbarBtnClass} title="Clear formatting">Clear</button>
+      <button onClick={insertTimestamp} className={mdToolbarBtnClass} title="Insert Timestamp">Time</button>
+      <div className="relative">
+        <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={mdToolbarBtnClass} title="Insert Emoji">😀</button>
+        {showEmojiPicker && (
+          <div className="absolute top-full left-0 mt-1 p-2 bg-white border border-black shadow-lg z-50 grid grid-cols-7 gap-1 min-w-[200px]">
+            {quickEmojis.map(emoji => (
+              <button key={emoji} onClick={() => insertEmoji(emoji)} className="p-1.5 hover:bg-gray-100 rounded text-lg">{emoji}</button>
+            ))}
+          </div>
+        )}
+      </div>
+      <button onClick={() => setIsFocusMode(!isFocusMode)}
+        className={`${mdToolbarBtnClass} ml-auto ${isFocusMode ? 'bg-black text-white' : ''}`}
+        title="Toggle Focus Mode">
+        Focus
+      </button>
     </div>
   );
 
@@ -1134,19 +1237,23 @@ ${previewRef.current.innerHTML}
 
   const editorPanel = (
     <div className={`flex flex-col min-h-0 ${viewMode === 'split' ? 'w-1/2 border-r border-black' : 'w-full'}`}>
-      <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium flex-shrink-0">
-        EDITOR
-      </div>
+      {!isFocusMode && (
+        <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium flex-shrink-0">
+          EDITOR
+        </div>
+      )}
       {markdownToolbar}
       <div className="flex flex-1 min-h-0">
         {/* Line numbers */}
-        <div className="flex-shrink-0 bg-gray-50 border-r border-gray-200 text-right select-none overflow-hidden">
-          <div className="p-3 text-xs font-mono text-gray-400 leading-[1.7]">
-            {Array.from({ length: lineCount }, (_, i) => (
-              <div key={i}>{i + 1}</div>
-            ))}
+        {!isFocusMode && (
+          <div className="flex-shrink-0 bg-gray-50 border-r border-gray-200 text-right select-none overflow-hidden">
+            <div className="p-3 text-xs font-mono text-gray-400 leading-[1.7]">
+              {Array.from({ length: lineCount }, (_, i) => (
+                <div key={i}>{i + 1}</div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         <textarea
           ref={textareaRef}
           onChange={editTextNotes}
@@ -1155,7 +1262,7 @@ ${previewRef.current.innerHTML}
           spellCheck="true"
           value={selectedTab?.notes ?? ""}
           placeholder={"Write markdown here...\n\n# Heading 1\n## Heading 2\n\n**Bold** *Italic* ~~Strikethrough~~\n\n- List item\n- [ ] Task\n\n```code block```"}
-          className="flex-1 w-full outline-none p-3 text-sm font-mono resize-none leading-[1.7]"
+          className={`flex-1 w-full outline-none p-3 text-sm font-mono resize-none leading-[1.7] ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}
         />
       </div>
     </div>
@@ -1163,11 +1270,13 @@ ${previewRef.current.innerHTML}
 
   const previewPanel = (
     <div className={`flex flex-col min-h-0 ${viewMode === 'split' ? 'w-1/2' : 'w-full'}`}>
-      <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium flex-shrink-0">
-        PREVIEW
-      </div>
+      {!isFocusMode && (
+        <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium flex-shrink-0">
+          PREVIEW
+        </div>
+      )}
       <div ref={previewRef} onScroll={viewMode === 'split' ? handlePreviewScroll : undefined}
-        className="flex-1 p-4 overflow-auto prose-quicknote">
+        className={`flex-1 p-4 overflow-auto prose-quicknote ${isFocusMode ? 'max-w-4xl mx-auto px-10' : ''}`}>
         {markdownContent ? (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -1194,17 +1303,22 @@ ${previewRef.current.innerHTML}
   if (markdownMode) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex flex-col">
-        <div className="px-4 pt-3 flex-shrink-0">
-          {toolbarButtons}
-          {tabBar}
-          {searchReplacePanel}
-          {statsPanel}
-        </div>
+        {!isFocusMode && (
+          <div className="px-4 pt-3 flex-shrink-0">
+            {toolbarButtons}
+            {tabBar}
+            {searchReplacePanel}
+            {statsPanel}
+          </div>
+        )}
+        {isFocusMode && (
+          <div className="h-4 flex-shrink-0" />
+        )}
 
         {/* TOC sidebar + editor area */}
-        <div className="flex flex-1 border-t border-black min-h-0">
+        <div className={`flex flex-1 ${!isFocusMode ? 'border-t border-black' : ''} min-h-0`}>
           {/* TOC sidebar */}
-          {showToc && tocItems.length > 0 && (
+          {!isFocusMode && showToc && tocItems.length > 0 && (
             <div className="w-56 flex-shrink-0 border-r border-black bg-gray-50 overflow-y-auto">
               <div className="px-3 py-1.5 bg-gray-100 border-b border-black text-xs text-gray-500 font-medium">
                 TABLE OF CONTENTS
@@ -1228,9 +1342,19 @@ ${previewRef.current.innerHTML}
           </div>
         </div>
 
-        <div className="px-4 py-1.5 border-t border-gray-200 flex-shrink-0">
-          {footerBar}
-        </div>
+        {!isFocusMode && (
+          <div className="px-4 py-1.5 border-t border-gray-200 flex-shrink-0">
+            {footerBar}
+          </div>
+        )}
+        {isFocusMode && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <button onClick={() => setIsFocusMode(false)}
+              className="bg-black text-white px-3 py-1.5 text-xs rounded-sm opacity-50 hover:opacity-100 transition-opacity">
+              Exit Focus Mode
+            </button>
+          </div>
+        )}
       </div>
     );
   }
