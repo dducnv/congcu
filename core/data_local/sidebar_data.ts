@@ -69,6 +69,12 @@ const toolsItems: SidebarItem[] = [
     href: "/pomodoro",
     icon: "",
     desc: "Focus timer with tasks."
+  },
+  {
+    name: "Create QR Code",
+    href: "/create-qr",
+    icon: "",
+    desc: "Generate QR codes from text or URLs."
   }
 ];
 
