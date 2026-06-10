@@ -47,10 +47,10 @@ const toolsItems: SidebarItem[] = [
     desc: "Quick percentage calculator (with formulas).",
   },
   {
-    name: "Color picker from image",
-    href: "/color-picker-from-image",
+    name: "Color Tools",
+    href: "/color-tools",
     icon: "",
-    desc: "Pick colors from images.",
+    desc: "Pick colors from images, convert HEX/RGB/HSL, get CSS & Flutter code.",
   },
   {
     name: "Quick image editor",
@@ -103,12 +103,6 @@ const developerToolsItems: SidebarItem[] = [
     href: "/dev-tools/generate-secret-key",
     icon: "",
     desc: "",
-  },
-  {
-    name: "Color Converter",
-    href: "/dev-tools/color-converter",
-    icon: "",
-    desc: "Chuyển đổi màu HEX ↔ RGB ↔ HSL với color picker",
   },
 ];
 
