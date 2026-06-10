@@ -104,6 +104,30 @@ const developerToolsItems: SidebarItem[] = [
     icon: "",
     desc: "",
   },
+  {
+    name: "Base64 Encode/Decode",
+    href: "/dev-tools/base64",
+    icon: "",
+    desc: "Encode and decode Base64 strings online.",
+  },
+  {
+    name: "URL Encode/Decode",
+    href: "/dev-tools/url-encode",
+    icon: "",
+    desc: "Encode and decode URL components online.",
+  },
+  {
+    name: "Timestamp Converter",
+    href: "/dev-tools/timestamp",
+    icon: "",
+    desc: "Convert Unix timestamps to dates and vice versa.",
+  },
+  {
+    name: "Regex Tester",
+    href: "/dev-tools/regex",
+    icon: "",
+    desc: "Test regex patterns with real-time highlighting.",
+  },
 ];
 
 const developerTools: SidebarModel = {
