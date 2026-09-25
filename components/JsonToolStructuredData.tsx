@@ -4,7 +4,7 @@ export default function JsonToolStructuredData() {
     "@type": "WebApplication",
     "name": "JSON Tool - Fix, Format, Validate & Compare JSON Online",
     "description": "Công cụ JSON miễn phí - Sửa lỗi JSON, format đẹp, validate, tìm kiếm và so sánh JSON. Hỗ trợ JSON không đúng format như {key: value}. Tool JSON online tốt nhất cho developer.",
-    "url": "https://multitools.dev/dev-tools/read-json",
+    "url": "https://tools4u.vercel.app/dev-tools/read-json",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Web Browser",
     "offers": {
@@ -15,7 +15,7 @@ export default function JsonToolStructuredData() {
     "creator": {
       "@type": "Organization",
       "name": "MultiTools",
-      "url": "https://multitools.dev"
+      "url": "https://tools4u.vercel.app"
     },
     "featureList": [
       "Fix JSON không đúng format",

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import QRCode from "qrcode";
 import { TitlePage } from "@/components/title_page";
 import { Container } from "@/components/container";
+
+import QrInfoSection from "./qr_info_section";
 
 export default function QrGenerator() {
   const [text, setText] = useState("");
@@ -12,24 +14,37 @@ export default function QrGenerator() {
   const [errorLevel, setErrorLevel] = useState<"L" | "M" | "Q" | "H">("M");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const generateQR = useCallback(async () => {
-    if (!text.trim()) return;
-    try {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      await QRCode.toCanvas(canvas, text, {
-        width: size,
-        margin: 2,
-        errorCorrectionLevel: errorLevel,
-        color: {
-          dark: "#000000",
-          light: "#ffffff",
-        },
-      });
-      setQrDataUrl(canvas.toDataURL("image/png"));
-    } catch (err) {
-      console.error(err);
+  useEffect(() => {
+    if (!text.trim()) {
+      setQrDataUrl(null);
+      return;
     }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    let isMounted = true;
+    QRCode.toCanvas(canvas, text, {
+      width: size,
+      margin: 2,
+      errorCorrectionLevel: errorLevel,
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+    })
+      .then(() => {
+        if (isMounted) {
+          setQrDataUrl(canvas.toDataURL("image/png"));
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [text, size, errorLevel]);
 
   const downloadQR = () => {
@@ -94,14 +109,6 @@ export default function QrGenerator() {
             </div>
           </div>
 
-          <button
-            onClick={generateQR}
-            disabled={!text.trim()}
-            className="bg-black text-white px-6 py-2 text-sm font-medium hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            Generate QR Code
-          </button>
-
           <div className="flex flex-col items-center gap-4 pt-4">
             <canvas ref={canvasRef} className={qrDataUrl ? "" : "hidden"} />
             {qrDataUrl && (
@@ -113,6 +120,8 @@ export default function QrGenerator() {
               </button>
             )}
           </div>
+
+          <QrInfoSection />
         </div>
       </Container>
     </>

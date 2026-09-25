@@ -1,116 +1,46 @@
-import { MetadataRoute } from 'next'
+import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://tools4u.vercel.app'
+  const baseUrl = 'https://tools4u.vercel.app';
+  const lastModified = new Date();
 
-  // Use a fixed date to avoid constant changes
-  const lastModified = new Date('2025-10-02')
-
-  return [
+  const routes: { path: string; priority: number; changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never' }[] = [
     // Homepage
-    {
-      url: baseUrl,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 1.0,
-    },
+    { path: '', priority: 1.0, changeFrequency: 'daily' },
 
-    // Conversion Tools
-    {
-      url: `${baseUrl}/image-to-text`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
+    // Primary High-Intent Tools (Priority: 0.9)
+    { path: '/create-qr', priority: 0.9, changeFrequency: 'weekly' },
+    { path: '/dev-tools/read-json', priority: 0.9, changeFrequency: 'weekly' },
+    { path: '/dev-tools/generate-secret-key', priority: 0.9, changeFrequency: 'weekly' },
+    { path: '/image-to-text', priority: 0.9, changeFrequency: 'weekly' },
 
-    // Tools
-    {
-      url: `${baseUrl}/quicknote`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/emoji`,
-      lastModified,
-      changeFrequency: 'yearly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/percentity`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/color-picker-from-image`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/quick-image-editor`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/draw`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/file-converter`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/remove-bg`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/currency-exchange`,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
+    // Developer Utilities (Priority: 0.8)
+    { path: '/dev-tools/base64', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/dev-tools/regex', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/dev-tools/url-encode', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/dev-tools/csv-viewer', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/dev-tools/timestamp', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/dev-tools/color-converter', priority: 0.8, changeFrequency: 'monthly' },
 
-    // Developer Tools
-    {
-      url: `${baseUrl}/dev-tools/read-json`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/dev-tools/generate-secret-key`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/dev-tools/color-converter`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/dev-tools/csv-viewer`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
+    // Productivity & Media Tools (Priority: 0.7 - 0.8)
+    { path: '/quicknote', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/quick-image-editor', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/color-picker-from-image', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/color-tools', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/currency-exchange', priority: 0.8, changeFrequency: 'weekly' },
+    { path: '/pomodoro', priority: 0.7, changeFrequency: 'monthly' },
+    { path: '/draw', priority: 0.7, changeFrequency: 'monthly' },
+    { path: '/percentity', priority: 0.7, changeFrequency: 'monthly' },
+    { path: '/emoji', priority: 0.7, changeFrequency: 'monthly' },
 
-    // About page
-    {
-      url: `${baseUrl}/about`,
-      lastModified,
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-  ]
+    // Informational
+    { path: '/about', priority: 0.4, changeFrequency: 'yearly' },
+  ];
+
+  return routes.map((item) => ({
+    url: item.path ? `${baseUrl}${item.path}` : baseUrl,
+    lastModified,
+    changeFrequency: item.changeFrequency,
+    priority: item.priority,
+  }));
 }
