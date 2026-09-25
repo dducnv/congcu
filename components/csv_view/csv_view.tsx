@@ -328,7 +328,7 @@ const CsvView: React.FC = () => {
     if (!dbInstance) return;
     try {
       const binary = exportDatabaseBinary(dbInstance);
-      const blob = new Blob([binary], { type: 'application/x-sqlite3' });
+      const blob = new Blob([binary as any], { type: 'application/x-sqlite3' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       const baseName = currentFileName ? currentFileName.replace(/\.[^/.]+$/, "") : "database";
