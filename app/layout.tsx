@@ -7,6 +7,7 @@ import 'tldraw/tldraw.css';
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://tools4u.vercel.app'),
   title: 'MultiTools - Free Online Developer Tools & Utilities | tools4u.vercel.app',
   description: 'Free online developer tools and utilities. JSON formatter, image to text converter, color picker, emoji picker, file converter, and more. All tools are free and work in your browser.',
   keywords: [

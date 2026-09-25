@@ -1,383 +1,79 @@
 "use client";
 
-import { createColumnHelper, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import Papa from 'papaparse';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Scatter,
-  ScatterChart,
-  Tooltip,
-  XAxis, YAxis
-} from 'recharts';
-import * as XLSX from 'xlsx';
-import SqlQueryTab from './sql_query_tab';
+import React, { useState, useCallback } from "react";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
+
+import FileDropzone from "./file_dropzone";
+import CsvViewer from "./csv_viewer";
+import ExcelViewer, { ExcelWorkbookData } from "./excel_viewer";
+import SqlViewer from "./sql_viewer";
+import JsonViewer from "./json_viewer";
 import {
   createDbFromBinary,
   createDbFromSql,
-  createDbFromData,
   getTables,
-  getTableData,
-  executeQuery,
-  exportDatabaseBinary,
   TableSchema,
-  SqlQueryResult,
-} from './sql_engine';
+} from "./sql_engine";
 
-// Types
-interface CSVData {
-  [key: string]: any;
-}
+type ActiveFileType = "csv" | "excel" | "sql" | "json" | null;
 
-interface ColumnStats {
-  name: string;
-  type: string;
-  count: number;
-  nullCount: number;
-  nullPercentage: number;
-  mean?: number;
-  median?: number;
-  min?: number;
-  max?: number;
-  uniqueValues: number;
-}
+export default function CsvView() {
+  const [activeFileType, setActiveFileType] = useState<ActiveFileType>(null);
+  const [fileName, setFileName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
 
-interface ChartConfig {
-  type: 'bar' | 'line' | 'pie' | 'scatter' | 'heatmap' | 'boxplot' | 'histogram';
-  xAxis?: string;
-  yAxis?: string;
-  groupBy?: string;
-  aggregation?: 'sum' | 'avg' | 'count';
-  bins?: number; // For histogram
-}
+  // CSV Data State
+  const [csvData, setCsvData] = useState<Record<string, any>[]>([]);
+  const [csvColumns, setCsvColumns] = useState<string[]>([]);
 
-const CsvView: React.FC = () => {
-  const [csvData, setCsvData] = useState<CSVData[]>([]);
-  const [columns, setColumns] = useState<string[]>([]);
-  const [columnStats, setColumnStats] = useState<ColumnStats[]>([]);
-  const [correlationMatrix, setCorrelationMatrix] = useState<number[][]>([]);
-  const [chartConfig, setChartConfig] = useState<ChartConfig>({ type: 'bar' });
-  const [activeTab, setActiveTab] = useState<'table' | 'sql' | 'stats' | 'charts' | 'pivot' | 'duplicates' | 'quality'>('table');
+  // Excel Data State
+  const [excelWorkbook, setExcelWorkbook] = useState<ExcelWorkbookData | null>(null);
 
-  // SQL and Database states
-  const [dbInstance, setDbInstance] = useState<any>(null);
-  const [tables, setTables] = useState<TableSchema[]>([]);
-  const [currentTable, setCurrentTable] = useState<string>('');
-  const [currentFileName, setCurrentFileName] = useState<string>('');
-  const [activeQuery, setActiveQuery] = useState<string>('');
-  const [queryResult, setQueryResult] = useState<SqlQueryResult | null>(null);
-  const [originalData, setOriginalData] = useState<CSVData[]>([]);
-  const [originalColumns, setOriginalColumns] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [loadingMessage, setLoadingMessage] = useState<string>('');
+  // SQL / SQLite Data State
+  const [sqlDb, setSqlDb] = useState<any>(null);
+  const [sqlTables, setSqlTables] = useState<TableSchema[]>([]);
 
-  // Advanced filtering state
-  const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
-  const [showFilters, setShowFilters] = useState(false);
-  const [pivotConfig, setPivotConfig] = useState({
-    groupBy: '',
-    values: '',
-    aggregation: 'sum' as 'sum' | 'avg' | 'count'
-  });
+  // JSON Data State
+  const [jsonData, setJsonData] = useState<Record<string, any>[]>([]);
+  const [rawJson, setRawJson] = useState("");
 
-  // Duplicate detection state
-  const [duplicateConfig, setDuplicateConfig] = useState({
-    selectedColumns: [] as string[]
-  });
-  const [uniqueData, setUniqueData] = useState<CSVData[]>([]);
-  const [duplicateStats, setDuplicateStats] = useState({
-    total: 0,
-    unique: 0,
-    duplicates: 0
-  });
-
-  // Refs for scroll synchronization
-  const topScrollRef = useRef<HTMLDivElement>(null);
-  const mainScrollRef = useRef<HTMLDivElement>(null);
-  const bottomScrollRef = useRef<HTMLDivElement>(null);
-
-  // Scroll functions
-  const scrollLeft = () => {
-    const scrollAmount = 200;
-    if (mainScrollRef.current) {
-      mainScrollRef.current.scrollLeft -= scrollAmount;
-    }
+  // Clear all states to open a new file
+  const handleClose = () => {
+    setActiveFileType(null);
+    setFileName("");
+    setCsvData([]);
+    setCsvColumns([]);
+    setExcelWorkbook(null);
+    setSqlDb(null);
+    setSqlTables([]);
+    setJsonData([]);
+    setRawJson("");
+    setIsLoading(false);
   };
 
-  const scrollRight = () => {
-    const scrollAmount = 200;
-    if (mainScrollRef.current) {
-      mainScrollRef.current.scrollLeft += scrollAmount;
-    }
-  };
+  // Main file loader handler
+  const handleFileLoaded = useCallback((file: File) => {
+    const lowerName = file.name.toLowerCase();
+    setFileName(file.name);
+    setIsLoading(true);
 
-  // Scroll synchronization
-  useEffect(() => {
-    const topScroll = topScrollRef.current;
-    const mainScroll = mainScrollRef.current;
-    const bottomScroll = bottomScrollRef.current;
-
-    if (!topScroll || !mainScroll || !bottomScroll) return;
-
-    const syncScroll = (source: HTMLDivElement, targets: HTMLDivElement[]) => {
-      const scrollLeft = source.scrollLeft;
-      targets.forEach(target => {
-        if (target !== source) {
-          target.scrollLeft = scrollLeft;
-        }
-      });
-    };
-
-    const handleTopScroll = () => syncScroll(topScroll, [mainScroll, bottomScroll]);
-    const handleMainScroll = () => syncScroll(mainScroll, [topScroll, bottomScroll]);
-    const handleBottomScroll = () => syncScroll(bottomScroll, [topScroll, mainScroll]);
-
-    topScroll.addEventListener('scroll', handleTopScroll);
-    mainScroll.addEventListener('scroll', handleMainScroll);
-    bottomScroll.addEventListener('scroll', handleBottomScroll);
-
-    return () => {
-      topScroll.removeEventListener('scroll', handleTopScroll);
-      mainScroll.removeEventListener('scroll', handleMainScroll);
-      bottomScroll.removeEventListener('scroll', handleBottomScroll);
-    };
-  }, [csvData.length]);
-
-  // Find unique rows based on selected columns
-  const findUniqueRows = useCallback(() => {
-    if (!csvData.length || !duplicateConfig.selectedColumns.length) {
-      setUniqueData(csvData);
-      setDuplicateStats({
-        total: csvData.length,
-        unique: csvData.length,
-        duplicates: 0
-      });
-      return;
-    }
-
-    const seen = new Map<string, CSVData>();
-    const cols = duplicateConfig.selectedColumns;
-
-    csvData.forEach((row) => {
-      // Create key from selected columns
-      const key = cols.map(col => String(row[col] || '')).join('|||');
-
-      if (!seen.has(key)) {
-        seen.set(key, row);
-      }
-    });
-
-    const uniqueRows = Array.from(seen.values());
-    setUniqueData(uniqueRows);
-    setDuplicateStats({
-      total: csvData.length,
-      unique: uniqueRows.length,
-      duplicates: csvData.length - uniqueRows.length
-    });
-  }, [csvData, duplicateConfig.selectedColumns]);
-
-  // Auto-run when config changes
-  useEffect(() => {
-    findUniqueRows();
-  }, [findUniqueRows]);
-
-  // Export functions
-  const exportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(csvData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data');
-    XLSX.writeFile(wb, 'data.xlsx');
-  };
-
-  const exportToJSON = () => {
-    const json = JSON.stringify(csvData, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'data.json');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const exportUniqueData = () => {
-    const csv = Papa.unparse(uniqueData);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'unique_data.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Correlation Matrix
-  const calculateCorrelations = useCallback((data: CSVData[], stats: ColumnStats[]) => {
-    const numericColumns = stats.filter(stat => stat.type === 'numeric');
-    const matrix: number[][] = [];
-
-    numericColumns.forEach((col1, i) => {
-      const row: number[] = [];
-      numericColumns.forEach((col2, j) => {
-        if (i === j) {
-          row.push(1);
-        } else {
-          const values1 = data.map(row => Number(row[col1.name])).filter(v => !isNaN(v));
-          const values2 = data.map(row => Number(row[col2.name])).filter(v => !isNaN(v));
-          const correlation = calculateCorrelation(values1, values2);
-          row.push(correlation);
-        }
-      });
-      matrix.push(row);
-    });
-
-    setCorrelationMatrix(matrix);
-  }, []);
-
-  // Schema Detection & Statistics
-  const calculateStatistics = useCallback((data: CSVData[]) => {
-    const currentColumns = Object.keys(data[0] || {});
-    const stats: ColumnStats[] = currentColumns.map(col => {
-      const values = data.map(row => row[col]).filter(val => val !== null && val !== undefined && val !== '');
-      const numericValues = values.filter(val => !isNaN(Number(val))).map(Number);
-
-      return {
-        name: col,
-        type: numericValues.length > values.length * 0.8 ? 'numeric' : 'string',
-        count: values.length,
-        nullCount: data.length - values.length,
-        nullPercentage: ((data.length - values.length) / data.length) * 100,
-        mean: numericValues.length > 0 ? numericValues.reduce((a, b) => a + b, 0) / numericValues.length : undefined,
-        median: numericValues.length > 0 ? numericValues.sort((a, b) => a - b)[Math.floor(numericValues.length / 2)] : undefined,
-        min: numericValues.length > 0 ? Math.min(...numericValues) : undefined,
-        max: numericValues.length > 0 ? Math.max(...numericValues) : undefined,
-        uniqueValues: new Set(values).size
-      };
-    });
-
-    setColumnStats(stats);
-    calculateCorrelations(data, stats);
-  }, [calculateCorrelations]);
-
-  // Handler for switching active table in SQLite database
-  const handleSelectTable = useCallback((tableName: string) => {
-    if (!dbInstance) return;
-    setCurrentTable(tableName);
-    const data = getTableData(dbInstance, tableName);
-    setCsvData(data.rows);
-    setColumns(data.columns);
-    setOriginalData(data.rows);
-    setOriginalColumns(data.columns);
-    calculateStatistics(data.rows);
-    setActiveQuery(`SELECT * FROM "${tableName}" LIMIT 50;`);
-    setQueryResult(null);
-  }, [dbInstance, calculateStatistics]);
-
-  // Handler for running custom SQL query
-  const handleExecuteQuery = useCallback((query: string): SqlQueryResult => {
-    if (!dbInstance) {
-      const errRes: SqlQueryResult = {
-        columns: [],
-        rows: [],
-        executionTimeMs: 0,
-        rowCount: 0,
-        error: "No active database loaded. Please upload a file first."
-      };
-      setQueryResult(errRes);
-      return errRes;
-    }
-
-    const res = executeQuery(dbInstance, query);
-    setQueryResult(res);
-    if (!res.error && res.rows.length > 0) {
-      setCsvData(res.rows);
-      setColumns(res.columns);
-      calculateStatistics(res.rows);
-    }
-    return res;
-  }, [dbInstance, calculateStatistics]);
-
-  // Reset to original data before queries
-  const handleResetData = useCallback(() => {
-    if (originalData.length > 0) {
-      setCsvData(originalData);
-      setColumns(originalColumns);
-      calculateStatistics(originalData);
-      setQueryResult(null);
-    } else if (dbInstance && currentTable) {
-      handleSelectTable(currentTable);
-    }
-  }, [originalData, originalColumns, dbInstance, currentTable, handleSelectTable, calculateStatistics]);
-
-  // Export database to .db
-  const handleExportDb = useCallback(() => {
-    if (!dbInstance) return;
-    try {
-      const binary = exportDatabaseBinary(dbInstance);
-      const blob = new Blob([binary as any], { type: 'application/x-sqlite3' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      const baseName = currentFileName ? currentFileName.replace(/\.[^/.]+$/, "") : "database";
-      link.download = `${baseName}.db`;
-      link.click();
-    } catch (err) {
-      console.error("Export DB error:", err);
-    }
-  }, [dbInstance, currentFileName]);
-
-  // File Upload & Parsing
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-
-    const fileName = file.name.toLowerCase();
-    setCurrentFileName(file.name);
-    setQueryResult(null);
-
-    // 1. SQLite Database file (.db, .sqlite, .sqlite3)
-    if (fileName.endsWith('.db') || fileName.endsWith('.sqlite') || fileName.endsWith('.sqlite3')) {
-      setIsLoading(true);
+    // 1. SQLite Database (.db, .sqlite, .sqlite3)
+    if (lowerName.endsWith(".db") || lowerName.endsWith(".sqlite") || lowerName.endsWith(".sqlite3")) {
       setLoadingMessage(`Loading SQLite database: ${file.name}...`);
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
           const buffer = e.target?.result as ArrayBuffer;
           const db = await createDbFromBinary(buffer);
-          setDbInstance(db);
-
-          const tableList = getTables(db);
-          setTables(tableList);
-
-          if (tableList.length > 0) {
-            const first = tableList[0];
-            setCurrentTable(first.name);
-            const { columns: cols, rows } = getTableData(db, first.name);
-            setCsvData(rows);
-            setColumns(cols);
-            setOriginalData(rows);
-            setOriginalColumns(cols);
-            calculateStatistics(rows);
-            setActiveQuery(`SELECT * FROM "${first.name}" LIMIT 50;`);
-          } else {
-            alert("No tables found in this SQLite database.");
-          }
-        } catch (error: any) {
-          console.error("SQLite parsing error:", error);
-          alert("Error opening SQLite database: " + (error.message || error));
+          const tables = getTables(db);
+          setSqlDb(db);
+          setSqlTables(tables);
+          setActiveFileType("sql");
+        } catch (err: any) {
+          console.error("SQLite load error:", err);
+          alert("Error opening SQLite file: " + (err.message || err));
         } finally {
           setIsLoading(false);
         }
@@ -386,98 +82,21 @@ const CsvView: React.FC = () => {
       return;
     }
 
-    // 2. SQL Dump / Script file (.sql)
-    if (fileName.endsWith('.sql')) {
-      setIsLoading(true);
-      setLoadingMessage(`Executing & parsing SQL script: ${file.name}...`);
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const sqlText = e.target?.result as string;
-          const db = await createDbFromSql(sqlText);
-          setDbInstance(db);
-
-          const tableList = getTables(db);
-          setTables(tableList);
-
-          if (tableList.length > 0) {
-            const first = tableList[0];
-            setCurrentTable(first.name);
-            const { columns: cols, rows } = getTableData(db, first.name);
-            setCsvData(rows);
-            setColumns(cols);
-            setOriginalData(rows);
-            setOriginalColumns(cols);
-            calculateStatistics(rows);
-            setActiveQuery(`SELECT * FROM "${first.name}" LIMIT 50;`);
-          } else {
-            // Check if there are query results in the script
-            const res = executeQuery(db, sqlText);
-            if (res.rows.length > 0) {
-              setCsvData(res.rows);
-              setColumns(res.columns);
-              setOriginalData(res.rows);
-              setOriginalColumns(res.columns);
-              calculateStatistics(res.rows);
-              setQueryResult(res);
-            } else {
-              alert("SQL file executed, but no tables or data rows were generated.");
-            }
-          }
-        } catch (error: any) {
-          console.error("SQL file execution error:", error);
-          alert("Error reading SQL script: " + (error.message || error));
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      reader.readAsText(file);
-      return;
-    }
-
-    // 3. JSON file (.json)
-    if (fileName.endsWith('.json')) {
-      setIsLoading(true);
-      setLoadingMessage(`Parsing JSON and initializing SQL engine: ${file.name}...`);
+    // 2. SQL Dump / Script (.sql)
+    if (lowerName.endsWith(".sql")) {
+      setLoadingMessage(`Parsing SQL dump script: ${file.name}...`);
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
           const text = e.target?.result as string;
-          const parsed = JSON.parse(text);
-          let dataArray: CSVData[] = [];
-
-          if (Array.isArray(parsed)) {
-            dataArray = parsed;
-          } else if (parsed && typeof parsed === 'object') {
-            const arrayKey = Object.keys(parsed).find((k) => Array.isArray(parsed[k]));
-            if (arrayKey) {
-              dataArray = parsed[arrayKey];
-            } else {
-              dataArray = [parsed];
-            }
-          }
-
-          if (dataArray.length > 0) {
-            setCsvData(dataArray);
-            const cols = Object.keys(dataArray[0] || {});
-            setColumns(cols);
-            setOriginalData(dataArray);
-            setOriginalColumns(cols);
-            calculateStatistics(dataArray);
-
-            const safeName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, "_") || "data";
-            const db = await createDbFromData(dataArray, safeName);
-            setDbInstance(db);
-            const tableList = getTables(db);
-            setTables(tableList);
-            setCurrentTable(safeName);
-            setActiveQuery(`SELECT * FROM "${safeName}" LIMIT 50;`);
-          } else {
-            alert("No data array found in JSON file.");
-          }
-        } catch (error: any) {
-          console.error("JSON parsing error:", error);
-          alert("Error parsing JSON: " + (error.message || error));
+          const db = await createDbFromSql(text);
+          const tables = getTables(db);
+          setSqlDb(db);
+          setSqlTables(tables);
+          setActiveFileType("sql");
+        } catch (err: any) {
+          console.error("SQL script error:", err);
+          alert("Error reading SQL script: " + (err.message || err));
         } finally {
           setIsLoading(false);
         }
@@ -486,40 +105,33 @@ const CsvView: React.FC = () => {
       return;
     }
 
-    // 4. Excel files (.xlsx, .xls)
-    if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-      setIsLoading(true);
-      setLoadingMessage(`Reading Excel workbook: ${file.name}...`);
+    // 3. Excel (.xlsx, .xls)
+    if (lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls")) {
+      setLoadingMessage(`Parsing Excel workbook sheets: ${file.name}...`);
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         try {
           const fileData = e.target?.result;
           if (fileData) {
-            const workbook = XLSX.read(fileData, { type: 'binary' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet) as CSVData[];
+            const workbook = XLSX.read(fileData, { type: "binary" });
+            const sheetNames = workbook.SheetNames;
+            const sheets: Record<string, Record<string, any>[]> = {};
 
-            if (jsonData.length > 0) {
-              setCsvData(jsonData);
-              const cols = Object.keys(jsonData[0] || {});
-              setColumns(cols);
-              setOriginalData(jsonData);
-              setOriginalColumns(cols);
-              calculateStatistics(jsonData);
+            sheetNames.forEach((sheet) => {
+              const worksheet = workbook.Sheets[sheet];
+              sheets[sheet] = XLSX.utils.sheet_to_json(worksheet);
+            });
 
-              const safeName = sheetName.replace(/[^a-zA-Z0-9_]/g, "_") || "excel_data";
-              const db = await createDbFromData(jsonData, safeName);
-              setDbInstance(db);
-              const tableList = getTables(db);
-              setTables(tableList);
-              setCurrentTable(safeName);
-              setActiveQuery(`SELECT * FROM "${safeName}" LIMIT 50;`);
-            }
+            setExcelWorkbook({
+              fileName: file.name,
+              sheetNames,
+              sheets,
+            });
+            setActiveFileType("excel");
           }
-        } catch (error: any) {
-          console.error("Excel parsing error:", error);
-          alert("Error parsing Excel file: " + (error.message || error));
+        } catch (err: any) {
+          console.error("Excel load error:", err);
+          alert("Error reading Excel workbook: " + (err.message || err));
         } finally {
           setIsLoading(false);
         }
@@ -528,1260 +140,178 @@ const CsvView: React.FC = () => {
       return;
     }
 
-    // 5. CSV, TSV, or Plain text files
-    setIsLoading(true);
-    setLoadingMessage(`Parsing data file: ${file.name}...`);
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
+    // 4. JSON (.json)
+    if (lowerName.endsWith(".json")) {
+      setLoadingMessage(`Parsing JSON document: ${file.name}...`);
+      const reader = new FileReader();
+      reader.onload = (e) => {
         try {
-          const data = results.data as CSVData[];
-          if (data && data.length > 0) {
-            setCsvData(data);
-            const cols = Object.keys(data[0] || {});
-            setColumns(cols);
-            setOriginalData(data);
-            setOriginalColumns(cols);
-            calculateStatistics(data);
+          const text = e.target?.result as string;
+          setRawJson(text);
+          const parsed = JSON.parse(text);
+          let arrayData: Record<string, any>[] = [];
 
-            const safeName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, "_") || "data";
-            const db = await createDbFromData(data, safeName);
-            setDbInstance(db);
-            const tableList = getTables(db);
-            setTables(tableList);
-            setCurrentTable(safeName);
-            setActiveQuery(`SELECT * FROM "${safeName}" LIMIT 50;`);
+          if (Array.isArray(parsed)) {
+            arrayData = parsed;
+          } else if (parsed && typeof parsed === "object") {
+            const arrKey = Object.keys(parsed).find((k) => Array.isArray(parsed[k]));
+            if (arrKey) {
+              arrayData = parsed[arrKey];
+            } else {
+              arrayData = [parsed];
+            }
           }
-        } catch (error: any) {
-          console.error("CSV to SQLite error:", error);
+
+          setJsonData(arrayData);
+          setActiveFileType("json");
+        } catch (err: any) {
+          console.error("JSON parse error:", err);
+          alert("Error parsing JSON: " + (err.message || err));
         } finally {
           setIsLoading(false);
         }
+      };
+      reader.readAsText(file);
+      return;
+    }
+
+    // 5. CSV, TSV, or Plain text
+    setLoadingMessage(`Parsing CSV data: ${file.name}...`);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const data = results.data as Record<string, any>[];
+        setCsvData(data);
+        setCsvColumns(Object.keys(data[0] || {}));
+        setActiveFileType("csv");
+        setIsLoading(false);
       },
-      error: (error) => {
-        console.error('CSV parsing error:', error);
-        alert("Failed to parse CSV file: " + error.message);
+      error: (err) => {
+        console.error("CSV parse error:", err);
+        alert("Error reading CSV file: " + err.message);
+        setIsLoading(false);
+      },
+    });
+  }, []);
+
+  // Sample data loader for quick testing
+  const handleLoadSample = async (type: "csv" | "sql" | "json") => {
+    setIsLoading(true);
+    if (type === "csv") {
+      setLoadingMessage("Loading sample CSV...");
+      const sampleCsv = `id,customer,product,category,price,status,date\n101,John Doe,MacBook Pro,Electronics,1999,Delivered,2026-03-12\n102,Jane Smith,Wireless Mouse,Accessories,49,Shipped,2026-03-14\n103,Alex Johnson,Coffee Mug,Home,15,Delivered,2026-03-15\n104,Sarah Williams,Desk Lamp,Furniture,79,Pending,2026-03-16\n105,Michael Brown,Mechanical Keyboard,Accessories,129,Delivered,2026-03-18\n106,Emily Davis,USB-C Monitor,Electronics,450,Delivered,2026-03-20`;
+      Papa.parse(sampleCsv, {
+        header: true,
+        complete: (res) => {
+          setCsvData(res.data as Record<string, any>[]);
+          setCsvColumns(Object.keys(res.data[0] || {}));
+          setFileName("sample_orders.csv");
+          setActiveFileType("csv");
+          setIsLoading(false);
+        },
+      });
+    } else if (type === "sql") {
+      setLoadingMessage("Creating sample SQLite database with tables...");
+      const sqlDump = `
+        CREATE TABLE "users" ("id" INT, "name" TEXT, "email" TEXT, "role" TEXT, "department" TEXT);
+        INSERT INTO "users" VALUES (1, 'Alice Smith', 'alice@company.com', 'Manager', 'Engineering');
+        INSERT INTO "users" VALUES (2, 'Bob Johnson', 'bob@company.com', 'Senior Dev', 'Engineering');
+        INSERT INTO "users" VALUES (3, 'Charlie Lee', 'charlie@company.com', 'Designer', 'Product');
+        INSERT INTO "users" VALUES (4, 'Diana Prince', 'diana@company.com', 'Lead QA', 'Engineering');
+        INSERT INTO "users" VALUES (5, 'Evan Wright', 'evan@company.com', 'Product Manager', 'Product');
+
+        CREATE TABLE "projects" ("id" INT, "project_name" TEXT, "status" TEXT, "budget" INT, "lead_id" INT);
+        INSERT INTO "projects" VALUES (101, 'NextGen Mobile App', 'In Progress', 45000, 1);
+        INSERT INTO "projects" VALUES (102, 'Cloud Data Lake', 'Planning', 80000, 2);
+        INSERT INTO "projects" VALUES (103, 'Brand Identity Redesign', 'Completed', 15000, 3);
+        INSERT INTO "projects" VALUES (104, 'Security Audit 2026', 'In Progress', 25000, 4);
+      `;
+      try {
+        const db = await createDbFromSql(sqlDump);
+        const tables = getTables(db);
+        setSqlDb(db);
+        setSqlTables(tables);
+        setFileName("company_database.db");
+        setActiveFileType("sql");
+      } catch (e) {
+        console.error("Sample SQL error:", e);
+      } finally {
         setIsLoading(false);
       }
-    });
-  }, [calculateStatistics]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'text/csv': ['.csv'],
-      'text/tab-separated-values': ['.tsv'],
-      'text/plain': ['.txt', '.csv', '.tsv', '.sql'],
-      'application/vnd.ms-excel': ['.csv', '.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/json': ['.json'],
-      'application/sql': ['.sql'],
-      'application/x-sqlite3': ['.db', '.sqlite', '.sqlite3'],
-      'application/octet-stream': ['.db', '.sqlite', '.sqlite3'],
+    } else if (type === "json") {
+      setLoadingMessage("Loading sample JSON...");
+      const sample = [
+        { id: 1, title: "Learn Next.js 14", completed: true, tags: ["frontend", "react"] },
+        { id: 2, title: "Optimize WebAssembly SQLite", completed: true, tags: ["wasm", "sqlite"] },
+        { id: 3, title: "Implement Topic Clusters for SEO", completed: true, tags: ["marketing", "seo"] },
+        { id: 4, title: "Deploy to Vercel Production", completed: false, tags: ["devops", "cloud"] },
+      ];
+      setJsonData(sample);
+      setRawJson(JSON.stringify(sample, null, 2));
+      setFileName("sample_tasks.json");
+      setActiveFileType("json");
+      setIsLoading(false);
     }
-  });
-
-
-  const calculateCorrelation = (x: number[], y: number[]): number => {
-    const n = Math.min(x.length, y.length);
-    if (n === 0) return 0;
-
-    const sumX = x.slice(0, n).reduce((a, b) => a + b, 0);
-    const sumY = y.slice(0, n).reduce((a, b) => a + b, 0);
-    const sumXY = x.slice(0, n).reduce((sum, xi, i) => sum + xi * y[i], 0);
-    const sumX2 = x.slice(0, n).reduce((sum, xi) => sum + xi * xi, 0);
-    const sumY2 = y.slice(0, n).reduce((sum, yi) => sum + yi * yi, 0);
-
-    const numerator = n * sumXY - sumX * sumY;
-    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
-
-    return denominator === 0 ? 0 : numerator / denominator;
-  };
-
-  // Table Configuration
-  const columnHelper = useMemo(() => createColumnHelper<CSVData>(), []);
-  const tableColumns = useMemo(() =>
-    columns.map(col =>
-      columnHelper.accessor(col, {
-        header: col,
-        cell: info => info.getValue(),
-        enableSorting: true,
-        enableColumnFilter: true,
-      })
-    ), [columns, columnHelper]
-  );
-
-  // Apply column filters
-  const filteredData = useMemo(() => {
-    if (Object.keys(columnFilters).length === 0) return csvData;
-
-    return csvData.filter(row => {
-      return Object.entries(columnFilters).every(([column, filterValue]) => {
-        if (!filterValue) return true;
-        const cellValue = String(row[column] || '').toLowerCase();
-        return cellValue.includes(filterValue.toLowerCase());
-      });
-    });
-  }, [csvData, columnFilters]);
-
-  const table = useReactTable({
-    data: filteredData,
-    columns: tableColumns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 50,
-      },
-    },
-  });
-
-  // Chart Data Generation
-  const generateChartData = () => {
-    if (!chartConfig.xAxis || !csvData.length) return [];
-
-    if (chartConfig.type === 'pie') {
-      const counts: { [key: string]: number } = {};
-      csvData.forEach(row => {
-        const value = row[chartConfig.xAxis!];
-        counts[value] = (counts[value] || 0) + 1;
-      });
-      return Object.entries(counts).map(([name, value]) => ({ name, value }));
-    }
-
-    if (chartConfig.type === 'scatter' && chartConfig.yAxis) {
-      return csvData.map(row => ({
-        x: Number(row[chartConfig.xAxis!]) || 0,
-        y: Number(row[chartConfig.yAxis!]) || 0,
-      }));
-    }
-
-    if (chartConfig.type === 'heatmap') {
-      const numericColumns = columnStats.filter(stat => stat.type === 'numeric');
-      const matrix: { [key: string]: any } = {};
-
-      numericColumns.forEach((col1, i) => {
-        numericColumns.forEach((col2, j) => {
-          if (i !== j) {
-            const values1 = csvData.map(row => Number(row[col1.name])).filter(v => !isNaN(v));
-            const values2 = csvData.map(row => Number(row[col2.name])).filter(v => !isNaN(v));
-            const correlation = calculateCorrelation(values1, values2);
-            matrix[`${col1.name}-${col2.name}`] = {
-              x: col1.name,
-              y: col2.name,
-              value: correlation
-            };
-          }
-        });
-      });
-      return Object.values(matrix);
-    }
-
-    if (chartConfig.type === 'boxplot') {
-      const numericColumns = columnStats.filter(stat => stat.type === 'numeric');
-      return numericColumns.map(stat => {
-        const values = csvData.map(row => Number(row[stat.name])).filter(v => !isNaN(v)).sort((a, b) => a - b);
-        const q1 = values[Math.floor(values.length * 0.25)];
-        const median = values[Math.floor(values.length * 0.5)];
-        const q3 = values[Math.floor(values.length * 0.75)];
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-
-        return {
-          name: stat.name,
-          min,
-          q1,
-          median,
-          q3,
-          max,
-          outliers: values.filter(v => v < q1 - 1.5 * (q3 - q1) || v > q3 + 1.5 * (q3 - q1))
-        };
-      });
-    }
-
-    if (chartConfig.type === 'histogram') {
-      const values = csvData.map(row => Number(row[chartConfig.xAxis!])).filter(v => !isNaN(v));
-      const min = Math.min(...values);
-      const max = Math.max(...values);
-      const bins = chartConfig.bins || 10;
-      const binSize = (max - min) / bins;
-
-      const histogram: { [key: string]: number } = {};
-      for (let i = 0; i < bins; i++) {
-        const start = min + i * binSize;
-        const end = min + (i + 1) * binSize;
-        const label = `${start.toFixed(1)}-${end.toFixed(1)}`;
-        histogram[label] = 0;
-      }
-
-      values.forEach(value => {
-        const binIndex = Math.min(Math.floor((value - min) / binSize), bins - 1);
-        const start = min + binIndex * binSize;
-        const end = min + (binIndex + 1) * binSize;
-        const label = `${start.toFixed(1)}-${end.toFixed(1)}`;
-        histogram[label]++;
-      });
-
-      return Object.entries(histogram).map(([name, value]) => ({ name, value }));
-    }
-
-    if (chartConfig.groupBy) {
-      const grouped: { [key: string]: number } = {};
-      csvData.forEach(row => {
-        const group = row[chartConfig.groupBy!];
-        const value = Number(row[chartConfig.xAxis!]) || 0;
-        grouped[group] = (grouped[group] || 0) + value;
-      });
-      return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-    }
-
-    return csvData.map((row, index) => ({
-      name: `Row ${index + 1}`,
-      value: Number(row[chartConfig.xAxis!]) || 0,
-    }));
-  };
-
-  // Pivot Table
-  const generatePivotData = () => {
-    if (!pivotConfig.groupBy || !pivotConfig.values) return [];
-
-    const grouped: { [key: string]: number[] } = {};
-    csvData.forEach(row => {
-      const group = row[pivotConfig.groupBy];
-      const value = Number(row[pivotConfig.values]) || 0;
-      if (!grouped[group]) grouped[group] = [];
-      grouped[group].push(value);
-    });
-
-    return Object.entries(grouped).map(([group, values]) => {
-      let result = 0;
-      switch (pivotConfig.aggregation) {
-        case 'sum':
-          result = values.reduce((a, b) => a + b, 0);
-          break;
-        case 'avg':
-          result = values.reduce((a, b) => a + b, 0) / values.length;
-          break;
-        case 'count':
-          result = values.length;
-          break;
-      }
-      return { group, value: result };
-    });
-  };
-
-  // Render Chart
-  const renderChart = () => {
-    const data = generateChartData();
-    if (!data.length) return <div>No data available</div>;
-
-    switch (chartConfig.type) {
-      case 'bar':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        );
-
-      case 'line':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="value" stroke="#8884d8" />
-            </LineChart>
-          </ResponsiveContainer>
-        );
-
-      case 'pie':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }: any) => `${name} ${((percent as number) * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={`hsl(${index * 360 / data.length}, 70%, 50%)`} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        );
-
-      case 'scatter':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <ScatterChart data={data}>
-              <CartesianGrid />
-              <XAxis dataKey="x" name={chartConfig.xAxis} />
-              <YAxis dataKey="y" name={chartConfig.yAxis} />
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-              <Scatter dataKey="y" fill="#8884d8" />
-            </ScatterChart>
-          </ResponsiveContainer>
-        );
-
-      case 'heatmap':
-        return (
-          <div className="w-full h-96 overflow-auto">
-            <div className="grid gap-1" style={{
-              gridTemplateColumns: `repeat(${Math.sqrt(data.length)}, 1fr)`,
-              aspectRatio: '1/1'
-            }}>
-              {data.map((item: any, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-center text-xs font-medium"
-                  style={{
-                    backgroundColor: `hsl(${120 + (item.value * 120)}, 70%, 50%)`,
-                    color: Math.abs(item.value) > 0.5 ? 'white' : 'black'
-                  }}
-                  title={`${item.x} vs ${item.y}: ${item.value.toFixed(3)}`}
-                >
-                  {item.value.toFixed(2)}
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 text-sm text-gray-600">
-              Correlation Heatmap: Red = High correlation, Green = Low correlation
-            </div>
-          </div>
-        );
-
-      case 'boxplot':
-        return (
-          <div className="w-full h-96 overflow-auto">
-            <div className="space-y-4">
-              {data.map((item: any, index) => (
-                <div key={index} className="border border-black p-4">
-                  <h4 className="font-semibold mb-2">{item.name}</h4>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm">Min: {item.min.toFixed(2)}</span>
-                        <span className="text-sm">Q1: {item.q1.toFixed(2)}</span>
-                        <span className="text-sm font-bold">Median: {item.median.toFixed(2)}</span>
-                        <span className="text-sm">Q3: {item.q3.toFixed(2)}</span>
-                        <span className="text-sm">Max: {item.max.toFixed(2)}</span>
-                      </div>
-                      <div className="w-full bg-gray-200 h-4 relative">
-                        <div
-                          className="absolute bg-blue-500 h-4"
-                          style={{
-                            left: '0%',
-                            width: '100%',
-                            background: `linear-gradient(to right, 
-                              #3b82f6 0%, 
-                              #3b82f6 ${((item.q1 - item.min) / (item.max - item.min)) * 100}%, 
-                              #10b981 ${((item.q1 - item.min) / (item.max - item.min)) * 100}%, 
-                              #10b981 ${((item.q3 - item.min) / (item.max - item.min)) * 100}%, 
-                              #3b82f6 ${((item.q3 - item.min) / (item.max - item.min)) * 100}%, 
-                              #3b82f6 100%)`
-                          }}
-                        ></div>
-                        <div
-                          className="absolute bg-red-500 w-1 h-4"
-                          style={{
-                            left: `${((item.median - item.min) / (item.max - item.min)) * 100}%`
-                          }}
-                        ></div>
-                      </div>
-                      {item.outliers.length > 0 && (
-                        <div className="text-xs text-red-600 mt-1">
-                          Outliers: {item.outliers.length} values
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'histogram':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        );
-
-      default:
-        return <div>Select a chart type</div>;
-    }
-  };
-
-  // Correlation Heatmap
-  const renderCorrelationHeatmap = () => {
-    if (!correlationMatrix.length) return <div>No correlation data</div>;
-
-    const numericColumns = columnStats.filter(stat => stat.type === 'numeric');
-
-    return (
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead>
-            <tr>
-              <th className="px-4 py-2 text-left">Column</th>
-              {numericColumns.map(col => (
-                <th key={col.name} className="px-4 py-2 text-center text-sm">
-                  {col.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {numericColumns.map((col, i) => (
-              <tr key={col.name}>
-                <td className="px-4 py-2 font-medium">{col.name}</td>
-                {correlationMatrix[i]?.map((value, j) => (
-                  <td
-                    key={j}
-                    className={`px-4 py-2 text-center text-sm ${value > 0.7 ? 'bg-red-100' :
-                      value > 0.3 ? 'bg-yellow-100' :
-                        value > -0.3 ? 'bg-gray-100' :
-                          value > -0.7 ? 'bg-blue-100' : 'bg-purple-100'
-                      }`}
-                  >
-                    {value.toFixed(2)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
   };
 
   return (
-    <div className="p-4 h-full flex flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">Data Viewer & SQL Query Engine</h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Analyze, visualize, and query CSV, Excel, JSON, SQL scripts, and SQLite (.db) databases right in your browser.
-          </p>
-        </div>
-      </div>
-
-      {/* File Upload */}
-      <div className="mb-6">
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed border-black rounded-lg p-8 text-center cursor-pointer transition-colors ${
-            isDragActive ? 'border-blue-500 bg-blue-50' : 'hover:border-gray-400'
-          }`}
-        >
-          <input {...getInputProps()} />
-          <div className="text-gray-600">
-            {isDragActive ? (
-              <p className="font-semibold text-blue-600">Drop your file here...</p>
-            ) : (
-              <div>
-                <p className="text-lg mb-2 font-medium">Drag & drop a file here, or click to select</p>
-                <p className="text-xs text-gray-500 font-mono">
-                  Supports .csv, .xlsx, .xls, .json, .sql, .db, .sqlite, .sqlite3 files
-                </p>
-              </div>
-            )}
+    <div className="p-4 min-h-screen flex flex-col space-y-4">
+      {/* If no file is opened, show Dropzone Hero */}
+      {!activeFileType && (
+        <div className="max-w-4xl mx-auto w-full pt-6">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-extrabold text-black tracking-tight">
+              Universal Data Viewer & SQL Query Engine
+            </h1>
+            <p className="text-sm text-gray-600 mt-2 max-w-xl mx-auto">
+              Open, inspect, and query CSV, Excel (.xlsx), SQLite (.db), SQL dumps, and JSON files directly in your browser without uploading to any server.
+            </p>
           </div>
-        </div>
-      </div>
 
-      {/* Loading state indicator */}
-      {isLoading && (
-        <div className="mb-4 p-4 border border-blue-500 bg-blue-50 text-blue-900 rounded flex items-center gap-3">
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-          <span className="text-sm font-medium">{loadingMessage || 'Processing data...'}</span>
+          <FileDropzone
+            onFileLoaded={handleFileLoaded}
+            onLoadSample={handleLoadSample}
+            isLoading={isLoading}
+            loadingMessage={loadingMessage}
+          />
         </div>
       )}
 
-      {csvData.length > 0 && (
-        <>
-          {/* Active Database & Table Switcher Bar */}
-          {tables.length > 0 && (
-            <div className="mb-4 p-3 bg-gray-50 border border-black flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-black uppercase tracking-wider">📁 Source:</span>
-                <span className="font-mono bg-white px-2 py-1 border border-gray-300">
-                  {currentFileName || "Data Table"}
-                </span>
+      {/* 1. Excel Workbook View (with Sheet switcher) */}
+      {activeFileType === "excel" && excelWorkbook && (
+        <ExcelViewer workbook={excelWorkbook} onClose={handleClose} />
+      )}
 
-                {tables.length > 1 && (
-                  <>
-                    <span className="font-bold text-black ml-2">Active Table:</span>
-                    <select
-                      value={currentTable}
-                      onChange={(e) => handleSelectTable(e.target.value)}
-                      className="border border-black bg-white px-2 py-1 font-mono text-xs focus:outline-none"
-                    >
-                      {tables.map(t => (
-                        <option key={t.name} value={t.name}>
-                          {t.name} ({t.rowCount} rows)
-                        </option>
-                      ))}
-                    </select>
-                  </>
-                )}
-              </div>
+      {/* 2. SQL / SQLite Database View (with Table sidebar & Query bar) */}
+      {activeFileType === "sql" && sqlDb && (
+        <SqlViewer
+          db={sqlDb}
+          tables={sqlTables}
+          fileName={fileName}
+          onClose={handleClose}
+        />
+      )}
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab('sql')}
-                  className={`px-3 py-1.5 border border-black font-semibold text-xs transition-colors ${
-                    activeTab === 'sql' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
-                  }`}
-                >
-                  ⚡ Query with SQL
-                </button>
-                {dbInstance && (
-                  <button
-                    onClick={handleExportDb}
-                    className="px-3 py-1.5 border border-black bg-white hover:bg-gray-100 text-xs"
-                    title="Export database to SQLite (.db) file"
-                  >
-                    💾 Export .db
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+      {/* 3. CSV / TSV View */}
+      {activeFileType === "csv" && (
+        <CsvViewer
+          data={csvData}
+          columns={csvColumns}
+          fileName={fileName}
+          onClose={handleClose}
+        />
+      )}
 
-          {/* Navigation Tabs */}
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-3">
-              {[
-                { id: 'table', label: 'Data Table' },
-                { id: 'sql', label: '⚡ SQL Query' },
-                { id: 'stats', label: 'Statistics' },
-                { id: 'charts', label: 'Charts' },
-                { id: 'pivot', label: 'Pivot Table' },
-                { id: 'duplicates', label: 'Remove Duplicates' },
-                { id: 'quality', label: 'Data Quality' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-3 py-2 border border-black font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-black text-white'
-                      : 'bg-white text-black hover:bg-gray-100'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Table View */}
-          {activeTab === 'table' && (
-            <div className="border border-black bg-white flex-1 flex flex-col">
-              <div className="p-4 border-b border-black flex-shrink-0">
-                <div className="flex flex-wrap gap-3 items-center justify-between">
-                  <div className="flex flex-wrap gap-3 items-center">
-                    <h2 className="text-lg font-semibold">Data Table ({csvData.length} rows)</h2>
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="border border-black px-3 py-2 min-w-60"
-                      onChange={(e) => table.setGlobalFilter(e.target.value)}
-                    />
-                    <button
-                      onClick={() => setShowFilters(!showFilters)}
-                      className={`px-3 py-2 border border-black font-medium text-sm transition-colors ${showFilters ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
-                        }`}
-                    >
-                      🔍 Filters
-                    </button>
-                    <select
-                      value={table.getState().pagination.pageSize}
-                      onChange={(e) => table.setPageSize(Number(e.target.value))}
-                      className="border border-black px-3 py-2"
-                    >
-                      <option value={25}>25 rows</option>
-                      <option value={50}>50 rows</option>
-                      <option value={100}>100 rows</option>
-                      <option value={200}>200 rows</option>
-                    </select>
-                  </div>
-
-                  {/* Export buttons */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={exportToExcel}
-                      className="px-3 py-2 border border-black bg-green-600 text-white hover:bg-green-700 flex items-center gap-1"
-                      title="Export to Excel"
-                    >
-
-                      <span className="hidden sm:inline">Export Excel</span>
-                    </button>
-                    <button
-                      onClick={exportToJSON}
-                      className="px-3 py-2 border border-black bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1"
-                      title="Export to JSON"
-                    >
-                      <span className="hidden sm:inline">Export JSON</span>
-                    </button>
-                  </div>
-
-                  {/* Scroll buttons */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={scrollLeft}
-                      className="px-3 py-2 border border-black bg-white text-black hover:bg-gray-100 flex items-center gap-1"
-                      title="Scroll left"
-                    >
-                      <span>←</span>
-                      <span className="hidden sm:inline">Scroll Left</span>
-                    </button>
-                    <button
-                      onClick={scrollRight}
-                      className="px-3 py-2 border border-black bg-white text-black hover:bg-gray-100 flex items-center gap-1"
-                      title="Scroll right"
-                    >
-                      <span className="hidden sm:inline">Scroll Right</span>
-                      <span>→</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Advanced Filters */}
-              {showFilters && (
-                <div className="p-4 border-b border-black bg-gray-50">
-                  <h3 className="font-semibold mb-3">Column Filters</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {columns.map(col => (
-                      <div key={col} className="flex flex-col">
-                        <label className="text-sm font-medium text-black mb-1">{col}</label>
-                        <input
-                          type="text"
-                          placeholder={`Filter ${col}...`}
-                          value={columnFilters[col] || ''}
-                          onChange={(e) => setColumnFilters({ ...columnFilters, [col]: e.target.value })}
-                          className="border border-black px-3 py-2 text-sm"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => setColumnFilters({})}
-                      className="px-3 py-1 border border-black bg-white text-black hover:bg-gray-100 text-sm"
-                    >
-                      Clear All
-                    </button>
-                    <button
-                      onClick={() => setShowFilters(false)}
-                      className="px-3 py-1 border border-black bg-gray-600 text-white hover:bg-gray-700 text-sm"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex-1 border border-black flex flex-col">
-                {/* Top scrollbar */}
-                <div
-                  ref={topScrollRef}
-                  className="overflow-x-auto overflow-y-hidden border-b border-gray-300"
-                  style={{ height: '17px' }}
-                >
-                  <div style={{ height: '1px', minWidth: '800px' }}></div>
-                </div>
-
-                {/* Main table container */}
-                <div
-                  ref={mainScrollRef}
-                  className="overflow-x-auto overflow-y-auto flex-1"
-                >
-                  <table className="min-w-full table-fixed" style={{ minWidth: '800px' }}>
-                    <thead className="bg-gray-100 sticky top-0 z-10">
-                      {table.getHeaderGroups().map(headerGroup => (
-                        <tr key={headerGroup.id}>
-                          {headerGroup.headers.map(header => (
-                            <th
-                              key={header.id}
-                              className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black cursor-pointer hover:bg-gray-200 min-w-32 whitespace-nowrap"
-                              onClick={header.column.getToggleSortingHandler()}
-                            >
-                              {flexRender(header.column.columnDef.header, header.getContext())}
-                              {header.column.getIsSorted() === 'asc' ? ' ↑' : header.column.getIsSorted() === 'desc' ? ' ↓' : ''}
-                            </th>
-                          ))}
-                        </tr>
-                      ))}
-                    </thead>
-                    <tbody className="bg-white">
-                      {table.getRowModel().rows.map(row => (
-                        <tr key={row.id} className="border-b border-gray-200 hover:bg-gray-50">
-                          {row.getVisibleCells().map(cell => (
-                            <td key={cell.id} className="px-4 py-3 text-sm text-black min-w-32 max-w-48 truncate" title={String(cell.getValue())}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Bottom scrollbar */}
-                <div
-                  ref={bottomScrollRef}
-                  className="overflow-x-auto overflow-y-hidden border-t border-gray-300"
-                  style={{ height: '17px' }}
-                >
-                  <div style={{ height: '1px', minWidth: '800px' }}></div>
-                </div>
-              </div>
-
-              <div className="px-4 py-3 border-t border-black flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => table.setPageIndex(0)}
-                    disabled={!table.getCanPreviousPage()}
-                    className="px-3 py-1 border border-black bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    First
-                  </button>
-                  <button
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    className="px-3 py-1 border border-black bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    className="px-3 py-1 border border-black bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                  <button
-                    onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                    disabled={!table.getCanNextPage()}
-                    className="px-3 py-1 border border-black bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Last
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {/* Bottom scroll buttons */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={scrollLeft}
-                      className="px-2 py-1 border border-black bg-white text-black hover:bg-gray-100 text-sm"
-                      title="Scroll left"
-                    >
-                      ←
-                    </button>
-                    <button
-                      onClick={scrollRight}
-                      className="px-2 py-1 border border-black bg-white text-black hover:bg-gray-100 text-sm"
-                      title="Scroll right"
-                    >
-                      →
-                    </button>
-                  </div>
-
-                  <div className="text-sm text-black">
-                    Showing {table.getRowModel().rows.length} of {csvData.length} rows | Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* SQL Query View */}
-          {activeTab === 'sql' && (
-            <SqlQueryTab
-              db={dbInstance}
-              tables={tables}
-              currentTable={currentTable}
-              onSelectTable={handleSelectTable}
-              onExecuteQuery={handleExecuteQuery}
-              onResetData={handleResetData}
-              queryResult={queryResult}
-              activeQuery={activeQuery}
-              setActiveQuery={setActiveQuery}
-              onExportDb={handleExportDb}
-            />
-          )}
-
-          {/* Statistics View */}
-          {activeTab === 'stats' && (
-            <div className="flex-1 flex flex-col space-y-6">
-              <div className="border border-black bg-white p-6 flex-1">
-                <h2 className="text-lg font-semibold mb-4">Column Statistics</h2>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="border-b border-black">
-                        <th className="text-left py-2 px-2">Column</th>
-                        <th className="text-left py-2 px-2">Type</th>
-                        <th className="text-left py-2 px-2">Count</th>
-                        <th className="text-left py-2 px-2">Null %</th>
-                        <th className="text-left py-2 px-2">Unique</th>
-                        <th className="text-left py-2 px-2">Mean</th>
-                        <th className="text-left py-2 px-2">Min</th>
-                        <th className="text-left py-2 px-2">Max</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {columnStats.map((stat, index) => (
-                        <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="py-2 px-2 font-medium">{stat.name}</td>
-                          <td className="py-2 px-2">
-                            <span className={`px-2 py-1 border border-black text-xs ${stat.type === 'numeric' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                              }`}>
-                              {stat.type}
-                            </span>
-                          </td>
-                          <td className="py-2 px-2">{stat.count}</td>
-                          <td className="py-2 px-2">{stat.nullPercentage.toFixed(1)}%</td>
-                          <td className="py-2 px-2">{stat.uniqueValues}</td>
-                          <td className="py-2 px-2">{stat.mean?.toFixed(2) || '-'}</td>
-                          <td className="py-2 px-2">{stat.min?.toFixed(2) || '-'}</td>
-                          <td className="py-2 px-2">{stat.max?.toFixed(2) || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="border border-black bg-white p-6">
-                <h2 className="text-lg font-semibold mb-4">Correlation Matrix</h2>
-                {renderCorrelationHeatmap()}
-              </div>
-            </div>
-          )}
-
-          {/* Charts View */}
-          {activeTab === 'charts' && (
-            <div className="border border-black bg-white p-6 flex-1 flex flex-col">
-              <h2 className="text-lg font-semibold mb-4">Chart Builder</h2>
-
-              <div className="flex flex-wrap gap-3 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Chart Type</label>
-                  <select
-                    value={chartConfig.type}
-                    onChange={(e) => setChartConfig({ ...chartConfig, type: e.target.value as any })}
-                    className="border border-black px-3 py-2"
-                  >
-                    <option value="bar">Bar Chart</option>
-                    <option value="line">Line Chart</option>
-                    <option value="pie">Pie Chart</option>
-                    <option value="scatter">Scatter Plot</option>
-                    <option value="heatmap">Heatmap</option>
-                    <option value="boxplot">Box Plot</option>
-                    <option value="histogram">Histogram</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">X-Axis</label>
-                  <select
-                    value={chartConfig.xAxis || ''}
-                    onChange={(e) => setChartConfig({ ...chartConfig, xAxis: e.target.value })}
-                    className="border border-black px-3 py-2"
-                  >
-                    <option value="">Select column</option>
-                    {columns.map(col => (
-                      <option key={col} value={col}>{col}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {chartConfig.type === 'scatter' && (
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-1">Y-Axis</label>
-                    <select
-                      value={chartConfig.yAxis || ''}
-                      onChange={(e) => setChartConfig({ ...chartConfig, yAxis: e.target.value })}
-                      className="border border-black px-3 py-2"
-                    >
-                      <option value="">Select column</option>
-                      {columns.map(col => (
-                        <option key={col} value={col}>{col}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {chartConfig.type === 'histogram' && (
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-1">Number of Bins</label>
-                    <input
-                      type="number"
-                      min="5"
-                      max="50"
-                      value={chartConfig.bins || 10}
-                      onChange={(e) => setChartConfig({ ...chartConfig, bins: parseInt(e.target.value) || 10 })}
-                      className="border border-black px-3 py-2"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="border border-black p-4 flex-1">
-                {renderChart()}
-              </div>
-            </div>
-          )}
-
-          {/* Pivot Table View */}
-          {activeTab === 'pivot' && (
-            <div className="border border-black bg-white p-6 flex-1 flex flex-col">
-              <h2 className="text-lg font-semibold mb-4">Pivot Table</h2>
-
-              <div className="flex flex-wrap gap-3 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Group By</label>
-                  <select
-                    value={pivotConfig.groupBy}
-                    onChange={(e) => setPivotConfig({ ...pivotConfig, groupBy: e.target.value })}
-                    className="border border-black px-3 py-2"
-                  >
-                    <option value="">Select column</option>
-                    {columns.map(col => (
-                      <option key={col} value={col}>{col}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Values</label>
-                  <select
-                    value={pivotConfig.values}
-                    onChange={(e) => setPivotConfig({ ...pivotConfig, values: e.target.value })}
-                    className="border border-black px-3 py-2"
-                  >
-                    <option value="">Select column</option>
-                    {columns.map(col => (
-                      <option key={col} value={col}>{col}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Aggregation</label>
-                  <select
-                    value={pivotConfig.aggregation}
-                    onChange={(e) => setPivotConfig({ ...pivotConfig, aggregation: e.target.value as any })}
-                    className="border border-black px-3 py-2"
-                  >
-                    <option value="sum">Sum</option>
-                    <option value="avg">Average</option>
-                    <option value="count">Count</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="border border-black flex-1 overflow-auto">
-                <table className="min-w-full">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black">Group</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black">Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {generatePivotData().map((row, index) => (
-                      <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-black">
-                          {row.group}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-black">
-                          {row.value.toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Data Quality Report */}
-          {activeTab === 'quality' && (
-            <div className="border border-black bg-white p-6 flex-1 flex flex-col">
-              <h2 className="text-lg font-semibold mb-4">Data Quality Report</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                {/* Overall Quality Score */}
-                <div className="border border-black p-4">
-                  <h3 className="font-semibold mb-2">Overall Quality Score</h3>
-                  <div className="text-3xl font-bold text-green-600">
-                    {Math.round((1 - (columnStats.reduce((sum, stat) => sum + stat.nullPercentage, 0) / (columnStats.length * 100))) * 100)}%
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">Data completeness</p>
-                </div>
-
-                {/* Missing Data */}
-                <div className="border border-black p-4">
-                  <h3 className="font-semibold mb-2">Missing Data</h3>
-                  <div className="text-2xl font-bold text-red-600">
-                    {columnStats.reduce((sum, stat) => sum + stat.nullCount, 0)}
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">Total missing values</p>
-                </div>
-
-                {/* Data Types */}
-                <div className="border border-black p-4">
-                  <h3 className="font-semibold mb-2">Data Types</h3>
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Numeric:</span>
-                      <span className="font-semibold text-blue-600">
-                        {columnStats.filter(s => s.type === 'numeric').length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Text:</span>
-                      <span className="font-semibold text-green-600">
-                        {columnStats.filter(s => s.type === 'string').length}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Detailed Column Analysis */}
-              <div className="border border-black flex-1 overflow-auto">
-                <h3 className="font-semibold mb-3 p-4 border-b border-black">Column Quality Analysis</h3>
-                <table className="min-w-full">
-                  <thead className="bg-gray-100 sticky top-0">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black">Column</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black">Type</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black">Completeness</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black">Unique Values</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black">Quality Score</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black">Issues</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {columnStats.map((stat, index) => {
-                      const completeness = ((stat.count / csvData.length) * 100).toFixed(1);
-                      const qualityScore = Math.round((1 - (stat.nullPercentage / 100)) * 100);
-                      const issues = [];
-
-                      if (stat.nullPercentage > 50) issues.push('High missing data');
-                      if (stat.uniqueValues < 5) issues.push('Low diversity');
-                      if (stat.type === 'numeric' && stat.mean === undefined) issues.push('Invalid numeric data');
-
-                      return (
-                        <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-medium text-black">{stat.name}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <span className={`px-2 py-1 text-xs rounded ${stat.type === 'numeric' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                              }`}>
-                              {stat.type}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="w-20 bg-gray-200 rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full ${parseFloat(completeness) > 80 ? 'bg-green-500' :
-                                    parseFloat(completeness) > 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                    }`}
-                                  style={{ width: `${completeness}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-xs">{completeness}%</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm">{stat.uniqueValues}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <span className={`font-semibold ${qualityScore > 80 ? 'text-green-600' :
-                              qualityScore > 50 ? 'text-yellow-600' : 'text-red-600'
-                              }`}>
-                              {qualityScore}%
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            {issues.length > 0 ? (
-                              <div className="space-y-1">
-                                {issues.map((issue, i) => (
-                                  <span key={i} className="block text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
-                                    {issue}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-green-600 text-xs">✓ Good</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Duplicate Detection View */}
-          {activeTab === 'duplicates' && (
-            <div className="border border-black bg-white p-6 flex-1 flex flex-col">
-              <h2 className="text-lg font-semibold mb-4">Remove Duplicates</h2>
-
-              <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  Select columns to identify duplicate data. Only the first record of each duplicate group will be kept.
-                </p>
-
-                <div className="border border-black p-4 mb-4">
-                  <label className="block text-sm font-medium text-black mb-2">
-                    Select columns to compare:
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {columns.map(col => (
-                      <label key={col} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={duplicateConfig.selectedColumns.includes(col)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setDuplicateConfig({
-                                ...duplicateConfig,
-                                selectedColumns: [...duplicateConfig.selectedColumns, col]
-                              });
-                            } else {
-                              setDuplicateConfig({
-                                ...duplicateConfig,
-                                selectedColumns: duplicateConfig.selectedColumns.filter(c => c !== col)
-                              });
-                            }
-                          }}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm">{col}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Statistics */}
-                <div className="bg-gray-50 border border-black p-4 mb-4">
-                  <h3 className="font-semibold mb-2">Statistics:</h3>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <div className="text-gray-600">Total Rows:</div>
-                      <div className="text-lg font-semibold">{duplicateStats.total}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-600">Unique Rows:</div>
-                      <div className="text-lg font-semibold text-green-600">{duplicateStats.unique}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-600">Duplicate Rows:</div>
-                      <div className="text-lg font-semibold text-red-600">{duplicateStats.duplicates}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={exportUniqueData}
-                    disabled={!uniqueData.length}
-                    className="px-4 py-2 border border-black bg-black text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Export Unique Data (.csv)
-                  </button>
-                  <button
-                    onClick={() => {
-                      setCsvData(uniqueData);
-                      setActiveTab('table');
-                    }}
-                    disabled={!uniqueData.length}
-                    className="px-4 py-2 border border-black bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Replace Current Data
-                  </button>
-                </div>
-              </div>
-
-              {/* Preview unique data */}
-              {uniqueData.length > 0 && (
-                <div className="flex-1 flex flex-col">
-                  <h3 className="font-semibold mb-2">Preview Unique Data:</h3>
-                  <div className="border border-black flex-1 overflow-auto">
-                    <table className="min-w-full">
-                      <thead className="bg-gray-100 sticky top-0">
-                        <tr>
-                          {columns.map(col => (
-                            <th key={col} className="px-4 py-3 text-left text-xs font-medium text-black border-b border-black min-w-32">
-                              {col}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {uniqueData.slice(0, 100).map((row, index) => (
-                          <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-                            {columns.map(col => (
-                              <td key={col} className="px-4 py-3 text-sm text-black max-w-48 truncate" title={String(row[col])}>
-                                {String(row[col])}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {uniqueData.length > 100 && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      Showing first 100 rows. Total: {uniqueData.length} unique rows.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </>
+      {/* 4. JSON View */}
+      {activeFileType === "json" && (
+        <JsonViewer
+          data={jsonData}
+          rawJson={rawJson}
+          fileName={fileName}
+          onClose={handleClose}
+        />
       )}
     </div>
   );
-};
-
-export default CsvView;
+}
