@@ -93,10 +93,10 @@ const developerToolsItems: SidebarItem[] = [
     desc: "",
   },
   {
-    name: "CSV Viewer",
+    name: "CSV & SQL Viewer",
     href: "/dev-tools/csv-viewer",
     icon: "",
-    desc: "View, analyze and visualize CSV data with statistics and charts",
+    desc: "View, analyze, query CSV, Excel, SQL and SQLite .db files with in-browser SQL engine",
   },
   {
     name: "Generate secret key",

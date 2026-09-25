@@ -1,4 +1,5 @@
 import ColorTools from "@/components/color_tools/color_tools";
+import JsonLd from "@/components/seo/JsonLd";
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -61,8 +62,36 @@ export const metadata: Metadata = {
   },
 };
 
+const colorToolsSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "MultiTools Color Tools Suite",
+  "url": "https://tools4u.vercel.app/color-tools",
+  "description": "Comprehensive color utility to extract colors from photos, convert between HEX, RGB, HSL, CMYK, test WCAG contrast ratios, and export CSS & Flutter palettes.",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "All",
+  "browserRequirements": "Requires JavaScript. Requires HTML5 Canvas.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+  },
+  "featureList": [
+    "Image color extraction with eyedropper",
+    "HEX, RGB, HSL, and CMYK bidirectional conversion",
+    "WCAG 2.1 accessible contrast ratio checking",
+    "Instant CSS, Tailwind, and Flutter code export",
+    "Harmonic color palette generator",
+  ],
+};
+
 const page = () => {
-  return <ColorTools />;
+  return (
+    <>
+      <JsonLd data={colorToolsSchema} />
+      <ColorTools />
+    </>
+  );
 };
 
 export default page;

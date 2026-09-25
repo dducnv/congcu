@@ -1,8 +1,10 @@
 import { PercentBlocks } from "@/components/percentity/percentity";
+import JsonLd from "@/components/seo/JsonLd";
 import { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: 'Percentage Calculator - Calculate Percentages Online | MultiTools',
-  description: 'Free percentage calculator tool. Calculate percentages, percentage increase, decrease, and percentage of a number. Includes formulas and examples.',
+  description: 'Free percentage calculator tool. Calculate percentages, percentage increase, decrease, discount, and percentage of a number with formulas.',
   keywords: [
     'percentage calculator',
     'percent calculator',
@@ -11,19 +13,7 @@ export const metadata: Metadata = {
     'percent increase',
     'percent decrease',
     'percentage of number',
-    'math calculator',
-    'percentage tool',
-    'percent tool',
-    'math tool',
-    'calculator online',
-    'percentage math',
-    'percent math',
-    'percentage examples',
-    'percent examples',
-    'math utility',
-    'calculation tool',
-    'percentage helper',
-    'percent helper'
+    'discount calculator',
   ],
   authors: [{ name: 'MultiTools' }],
   creator: 'MultiTools',
@@ -44,42 +34,45 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://tools4u.vercel.app/percentity',
     title: 'Percentage Calculator - Calculate Percentages Online',
-    description: 'Free percentage calculator tool. Calculate percentages, percentage increase, decrease, and percentage of a number. Includes formulas and examples.',
+    description: 'Free percentage calculator tool. Calculate percentages, increase, and decrease.',
     siteName: 'MultiTools',
-    images: [
-      {
-        url: '/og-percentage-calculator.png',
-        width: 1200,
-        height: 630,
-        alt: 'Percentage Calculator - Calculate Percentages Online',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Percentage Calculator - Calculate Percentages Online',
-    description: 'Free percentage calculator tool. Calculate percentages, percentage increase, decrease, and percentage of a number. Includes formulas and examples.',
-    images: ['/og-percentage-calculator.png'],
+    description: 'Free percentage calculator tool.',
   },
   alternates: {
     canonical: 'https://tools4u.vercel.app/percentity',
   },
-  category: 'technology',
-  classification: 'Developer Tools',
-  other: {
-    'application-name': 'Percentage Calculator',
-    'apple-mobile-web-app-title': 'Percentage Calculator',
-    'msapplication-TileColor': '#000000',
-    'theme-color': '#000000',
+  category: 'utilities',
+  classification: 'Math Tools',
+};
+
+const percentSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "MultiTools Percentage Calculator",
+  "url": "https://tools4u.vercel.app/percentity",
+  "description": "Calculate percentages, percentage change, markup, discount, and ratios instantly.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
   },
 };
 
 const page = () => {
   return (
-    <div className="min-h-screen py-8 px-2">
-      <PercentBlocks />
-    </div>
-  )
-}
+    <>
+      <JsonLd data={percentSchema} />
+      <div className="min-h-screen py-8 px-2">
+        <PercentBlocks />
+      </div>
+    </>
+  );
+};
 
-export default page
+export default page;

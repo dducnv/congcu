@@ -1,6 +1,6 @@
-
 import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
+import JsonLd from "@/components/seo/JsonLd";
 
 // Dynamically import the component to avoid SSR issues with toast-ui image editor
 const ImageEditorComponent = dynamic(() => import("@/components/page_components/image_editor").then(mod => ({ default: mod.ImageEditorComponent })), {
@@ -19,18 +19,9 @@ export const metadata: Metadata = {
     'rotate image',
     'image tool',
     'photo tool',
-    'image processor',
-    'photo processor',
-    'image utility',
-    'photo utility',
     'online editor',
     'image editing',
     'photo editing',
-    'image manipulation',
-    'photo manipulation',
-    'image converter',
-    'photo converter',
-    'image tool online'
   ],
   authors: [{ name: 'MultiTools' }],
   creator: 'MultiTools',
@@ -53,20 +44,11 @@ export const metadata: Metadata = {
     title: 'Quick Image Editor - Edit Images Online',
     description: 'Free online image editor. Crop, resize, rotate, and edit images instantly. No registration required. Works with JPG, PNG, and other image formats.',
     siteName: 'MultiTools',
-    images: [
-      {
-        url: '/og-image-editor.png',
-        width: 1200,
-        height: 630,
-        alt: 'Quick Image Editor - Edit Images Online',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Quick Image Editor - Edit Images Online',
-    description: 'Free online image editor. Crop, resize, rotate, and edit images instantly. No registration required. Works with JPG, PNG, and other image formats.',
-    images: ['/og-image-editor.png'],
+    description: 'Free online image editor. Crop, resize, rotate, and edit images instantly.',
   },
   alternates: {
     canonical: 'https://tools4u.vercel.app/quick-image-editor',
@@ -81,14 +63,31 @@ export const metadata: Metadata = {
   },
 };
 
+const imageEditorSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "MultiTools Quick Image Editor",
+  "url": "https://tools4u.vercel.app/quick-image-editor",
+  "description": "In-browser image editor to crop, resize, rotate, filter, and draw on images without uploading to remote servers.",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+  },
+};
 
 const page = () => {
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <div className="flex-1 flex overflow-hidden">
-        <ImageEditorComponent />
+    <>
+      <JsonLd data={imageEditorSchema} />
+      <div className="h-screen flex flex-col overflow-hidden">
+        <div className="flex-1 flex overflow-hidden">
+          <ImageEditorComponent />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

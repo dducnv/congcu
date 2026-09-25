@@ -1,30 +1,19 @@
 import { Metadata } from 'next';
 import dynamic from "next/dynamic";
+import JsonLd from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
-  title: 'Online Drawing Tool - Draw & Sketch Online | MultiTools',
-  description: 'Free online drawing and sketching tool. Create digital art, sketches, and drawings directly in your browser. No registration required.',
+  title: 'Online Drawing Tool - Draw, Sketch & Whiteboard Online | MultiTools',
+  description: 'Free online drawing, diagramming and infinite whiteboard tool powered by tldraw. Create digital art, architecture diagrams, mind maps, and sketches directly in your browser.',
   keywords: [
     'drawing tool',
     'sketch tool',
     'draw online',
-    'sketch online',
-    'digital art',
-    'drawing app',
-    'sketch app',
-    'art tool',
-    'drawing utility',
-    'sketch utility',
-    'online drawing',
-    'digital drawing',
-    'art creation',
-    'drawing canvas',
-    'sketch canvas',
-    'art tool online',
-    'drawing tool online',
-    'creative tool',
-    'art utility',
-    'drawing helper'
+    'online whiteboard',
+    'tldraw online',
+    'infinite canvas',
+    'diagram tool',
+    'digital sketch',
   ],
   authors: [{ name: 'MultiTools' }],
   creator: 'MultiTools',
@@ -45,33 +34,33 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://tools4u.vercel.app/draw',
     title: 'Online Drawing Tool - Draw & Sketch Online',
-    description: 'Free online drawing and sketching tool. Create digital art, sketches, and drawings directly in your browser. No registration required.',
+    description: 'Free online drawing and sketching tool. Create digital art and architecture diagrams in your browser.',
     siteName: 'MultiTools',
-    images: [
-      {
-        url: '/og-drawing-tool.png',
-        width: 1200,
-        height: 630,
-        alt: 'Online Drawing Tool - Draw & Sketch Online',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Online Drawing Tool - Draw & Sketch Online',
-    description: 'Free online drawing and sketching tool. Create digital art, sketches, and drawings directly in your browser. No registration required.',
-    images: ['/og-drawing-tool.png'],
+    description: 'Free online drawing and sketching tool.',
   },
   alternates: {
     canonical: 'https://tools4u.vercel.app/draw',
   },
-  category: 'technology',
-  classification: 'Developer Tools',
-  other: {
-    'application-name': 'Drawing Tool',
-    'apple-mobile-web-app-title': 'Drawing Tool',
-    'msapplication-TileColor': '#000000',
-    'theme-color': '#000000',
+  category: 'design',
+  classification: 'Design Tools',
+};
+
+const drawSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "MultiTools Online Drawing & Whiteboard Canvas",
+  "url": "https://tools4u.vercel.app/draw",
+  "description": "Infinite canvas online drawing and diagramming tool for sketches, flowcharts, and mind maps.",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
   },
 };
 
@@ -80,13 +69,13 @@ const DrawComponent = dynamic(async () => import("@/components/page_components/d
 });
 
 const page = () => {
-
   return (
-    <div>
-      <div className=" max-h-screen h-screen relative pl-1 overflow-hidden bg-white">
+    <>
+      <JsonLd data={drawSchema} />
+      <div className="max-h-screen h-screen relative pl-1 overflow-hidden bg-white">
         <DrawComponent />
       </div>
-    </div>
+    </>
   );
 };
 

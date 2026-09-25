@@ -21,6 +21,18 @@ import {
   XAxis, YAxis
 } from 'recharts';
 import * as XLSX from 'xlsx';
+import SqlQueryTab from './sql_query_tab';
+import {
+  createDbFromBinary,
+  createDbFromSql,
+  createDbFromData,
+  getTables,
+  getTableData,
+  executeQuery,
+  exportDatabaseBinary,
+  TableSchema,
+  SqlQueryResult,
+} from './sql_engine';
 
 // Types
 interface CSVData {
@@ -55,7 +67,19 @@ const CsvView: React.FC = () => {
   const [columnStats, setColumnStats] = useState<ColumnStats[]>([]);
   const [correlationMatrix, setCorrelationMatrix] = useState<number[][]>([]);
   const [chartConfig, setChartConfig] = useState<ChartConfig>({ type: 'bar' });
-  const [activeTab, setActiveTab] = useState<'table' | 'stats' | 'charts' | 'pivot' | 'duplicates' | 'quality'>('table');
+  const [activeTab, setActiveTab] = useState<'table' | 'sql' | 'stats' | 'charts' | 'pivot' | 'duplicates' | 'quality'>('table');
+
+  // SQL and Database states
+  const [dbInstance, setDbInstance] = useState<any>(null);
+  const [tables, setTables] = useState<TableSchema[]>([]);
+  const [currentTable, setCurrentTable] = useState<string>('');
+  const [currentFileName, setCurrentFileName] = useState<string>('');
+  const [activeQuery, setActiveQuery] = useState<string>('');
+  const [queryResult, setQueryResult] = useState<SqlQueryResult | null>(null);
+  const [originalData, setOriginalData] = useState<CSVData[]>([]);
+  const [originalColumns, setOriginalColumns] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
 
   // Advanced filtering state
   const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
@@ -249,59 +273,312 @@ const CsvView: React.FC = () => {
     calculateCorrelations(data, stats);
   }, [calculateCorrelations]);
 
+  // Handler for switching active table in SQLite database
+  const handleSelectTable = useCallback((tableName: string) => {
+    if (!dbInstance) return;
+    setCurrentTable(tableName);
+    const data = getTableData(dbInstance, tableName);
+    setCsvData(data.rows);
+    setColumns(data.columns);
+    setOriginalData(data.rows);
+    setOriginalColumns(data.columns);
+    calculateStatistics(data.rows);
+    setActiveQuery(`SELECT * FROM "${tableName}" LIMIT 50;`);
+    setQueryResult(null);
+  }, [dbInstance, calculateStatistics]);
+
+  // Handler for running custom SQL query
+  const handleExecuteQuery = useCallback((query: string): SqlQueryResult => {
+    if (!dbInstance) {
+      const errRes: SqlQueryResult = {
+        columns: [],
+        rows: [],
+        executionTimeMs: 0,
+        rowCount: 0,
+        error: "No active database loaded. Please upload a file first."
+      };
+      setQueryResult(errRes);
+      return errRes;
+    }
+
+    const res = executeQuery(dbInstance, query);
+    setQueryResult(res);
+    if (!res.error && res.rows.length > 0) {
+      setCsvData(res.rows);
+      setColumns(res.columns);
+      calculateStatistics(res.rows);
+    }
+    return res;
+  }, [dbInstance, calculateStatistics]);
+
+  // Reset to original data before queries
+  const handleResetData = useCallback(() => {
+    if (originalData.length > 0) {
+      setCsvData(originalData);
+      setColumns(originalColumns);
+      calculateStatistics(originalData);
+      setQueryResult(null);
+    } else if (dbInstance && currentTable) {
+      handleSelectTable(currentTable);
+    }
+  }, [originalData, originalColumns, dbInstance, currentTable, handleSelectTable, calculateStatistics]);
+
+  // Export database to .db
+  const handleExportDb = useCallback(() => {
+    if (!dbInstance) return;
+    try {
+      const binary = exportDatabaseBinary(dbInstance);
+      const blob = new Blob([binary], { type: 'application/x-sqlite3' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      const baseName = currentFileName ? currentFileName.replace(/\.[^/.]+$/, "") : "database";
+      link.download = `${baseName}.db`;
+      link.click();
+    } catch (err) {
+      console.error("Export DB error:", err);
+    }
+  }, [dbInstance, currentFileName]);
+
   // File Upload & Parsing
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    if (file) {
-      const fileName = file.name.toLowerCase();
+    if (!file) return;
 
-      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-        // Handle Excel files
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const fileData = e.target?.result;
-            if (fileData) {
-              const workbook = XLSX.read(fileData, { type: 'binary' });
-              const sheetName = workbook.SheetNames[0];
-              const worksheet = workbook.Sheets[sheetName];
-              const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const fileName = file.name.toLowerCase();
+    setCurrentFileName(file.name);
+    setQueryResult(null);
 
-              const excelData = jsonData as CSVData[];
-              setCsvData(excelData);
-              setColumns(Object.keys(excelData[0] || {}));
-              calculateStatistics(excelData);
-            }
-          } catch (error) {
-            console.error('Excel parsing error:', error);
+    // 1. SQLite Database file (.db, .sqlite, .sqlite3)
+    if (fileName.endsWith('.db') || fileName.endsWith('.sqlite') || fileName.endsWith('.sqlite3')) {
+      setIsLoading(true);
+      setLoadingMessage(`Loading SQLite database: ${file.name}...`);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const buffer = e.target?.result as ArrayBuffer;
+          const db = await createDbFromBinary(buffer);
+          setDbInstance(db);
+
+          const tableList = getTables(db);
+          setTables(tableList);
+
+          if (tableList.length > 0) {
+            const first = tableList[0];
+            setCurrentTable(first.name);
+            const { columns: cols, rows } = getTableData(db, first.name);
+            setCsvData(rows);
+            setColumns(cols);
+            setOriginalData(rows);
+            setOriginalColumns(cols);
+            calculateStatistics(rows);
+            setActiveQuery(`SELECT * FROM "${first.name}" LIMIT 50;`);
+          } else {
+            alert("No tables found in this SQLite database.");
           }
-        };
-        reader.readAsBinaryString(file);
-      } else {
-        // Handle CSV files
-        Papa.parse(file, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            const data = results.data as CSVData[];
-            setCsvData(data);
-            setColumns(Object.keys(data[0] || {}));
-            calculateStatistics(data);
-          },
-          error: (error) => {
-            console.error('CSV parsing error:', error);
-          }
-        });
-      }
+        } catch (error: any) {
+          console.error("SQLite parsing error:", error);
+          alert("Error opening SQLite database: " + (error.message || error));
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      return;
     }
+
+    // 2. SQL Dump / Script file (.sql)
+    if (fileName.endsWith('.sql')) {
+      setIsLoading(true);
+      setLoadingMessage(`Executing & parsing SQL script: ${file.name}...`);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const sqlText = e.target?.result as string;
+          const db = await createDbFromSql(sqlText);
+          setDbInstance(db);
+
+          const tableList = getTables(db);
+          setTables(tableList);
+
+          if (tableList.length > 0) {
+            const first = tableList[0];
+            setCurrentTable(first.name);
+            const { columns: cols, rows } = getTableData(db, first.name);
+            setCsvData(rows);
+            setColumns(cols);
+            setOriginalData(rows);
+            setOriginalColumns(cols);
+            calculateStatistics(rows);
+            setActiveQuery(`SELECT * FROM "${first.name}" LIMIT 50;`);
+          } else {
+            // Check if there are query results in the script
+            const res = executeQuery(db, sqlText);
+            if (res.rows.length > 0) {
+              setCsvData(res.rows);
+              setColumns(res.columns);
+              setOriginalData(res.rows);
+              setOriginalColumns(res.columns);
+              calculateStatistics(res.rows);
+              setQueryResult(res);
+            } else {
+              alert("SQL file executed, but no tables or data rows were generated.");
+            }
+          }
+        } catch (error: any) {
+          console.error("SQL file execution error:", error);
+          alert("Error reading SQL script: " + (error.message || error));
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      reader.readAsText(file);
+      return;
+    }
+
+    // 3. JSON file (.json)
+    if (fileName.endsWith('.json')) {
+      setIsLoading(true);
+      setLoadingMessage(`Parsing JSON and initializing SQL engine: ${file.name}...`);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const text = e.target?.result as string;
+          const parsed = JSON.parse(text);
+          let dataArray: CSVData[] = [];
+
+          if (Array.isArray(parsed)) {
+            dataArray = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            const arrayKey = Object.keys(parsed).find((k) => Array.isArray(parsed[k]));
+            if (arrayKey) {
+              dataArray = parsed[arrayKey];
+            } else {
+              dataArray = [parsed];
+            }
+          }
+
+          if (dataArray.length > 0) {
+            setCsvData(dataArray);
+            const cols = Object.keys(dataArray[0] || {});
+            setColumns(cols);
+            setOriginalData(dataArray);
+            setOriginalColumns(cols);
+            calculateStatistics(dataArray);
+
+            const safeName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, "_") || "data";
+            const db = await createDbFromData(dataArray, safeName);
+            setDbInstance(db);
+            const tableList = getTables(db);
+            setTables(tableList);
+            setCurrentTable(safeName);
+            setActiveQuery(`SELECT * FROM "${safeName}" LIMIT 50;`);
+          } else {
+            alert("No data array found in JSON file.");
+          }
+        } catch (error: any) {
+          console.error("JSON parsing error:", error);
+          alert("Error parsing JSON: " + (error.message || error));
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      reader.readAsText(file);
+      return;
+    }
+
+    // 4. Excel files (.xlsx, .xls)
+    if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+      setIsLoading(true);
+      setLoadingMessage(`Reading Excel workbook: ${file.name}...`);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const fileData = e.target?.result;
+          if (fileData) {
+            const workbook = XLSX.read(fileData, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet) as CSVData[];
+
+            if (jsonData.length > 0) {
+              setCsvData(jsonData);
+              const cols = Object.keys(jsonData[0] || {});
+              setColumns(cols);
+              setOriginalData(jsonData);
+              setOriginalColumns(cols);
+              calculateStatistics(jsonData);
+
+              const safeName = sheetName.replace(/[^a-zA-Z0-9_]/g, "_") || "excel_data";
+              const db = await createDbFromData(jsonData, safeName);
+              setDbInstance(db);
+              const tableList = getTables(db);
+              setTables(tableList);
+              setCurrentTable(safeName);
+              setActiveQuery(`SELECT * FROM "${safeName}" LIMIT 50;`);
+            }
+          }
+        } catch (error: any) {
+          console.error("Excel parsing error:", error);
+          alert("Error parsing Excel file: " + (error.message || error));
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      reader.readAsBinaryString(file);
+      return;
+    }
+
+    // 5. CSV, TSV, or Plain text files
+    setIsLoading(true);
+    setLoadingMessage(`Parsing data file: ${file.name}...`);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const data = results.data as CSVData[];
+          if (data && data.length > 0) {
+            setCsvData(data);
+            const cols = Object.keys(data[0] || {});
+            setColumns(cols);
+            setOriginalData(data);
+            setOriginalColumns(cols);
+            calculateStatistics(data);
+
+            const safeName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, "_") || "data";
+            const db = await createDbFromData(data, safeName);
+            setDbInstance(db);
+            const tableList = getTables(db);
+            setTables(tableList);
+            setCurrentTable(safeName);
+            setActiveQuery(`SELECT * FROM "${safeName}" LIMIT 50;`);
+          }
+        } catch (error: any) {
+          console.error("CSV to SQLite error:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      error: (error) => {
+        console.error('CSV parsing error:', error);
+        alert("Failed to parse CSV file: " + error.message);
+        setIsLoading(false);
+      }
+    });
   }, [calculateStatistics]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'text/csv': ['.csv'],
-      'application/vnd.ms-excel': ['.csv'],
+      'text/tab-separated-values': ['.tsv'],
+      'text/plain': ['.txt', '.csv', '.tsv', '.sql'],
+      'application/vnd.ms-excel': ['.csv', '.xls'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/json': ['.json'],
+      'application/sql': ['.sql'],
+      'application/x-sqlite3': ['.db', '.sqlite', '.sqlite3'],
+      'application/octet-stream': ['.db', '.sqlite', '.sqlite3'],
     }
   });
 
@@ -708,36 +985,104 @@ const CsvView: React.FC = () => {
 
   return (
     <div className="p-4 h-full flex flex-col">
-      <h1 className="text-2xl font-bold mb-4">CSV Data Viewer & Analyzer</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <h1 className="text-2xl font-bold">Data Viewer & SQL Query Engine</h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Analyze, visualize, and query CSV, Excel, JSON, SQL scripts, and SQLite (.db) databases right in your browser.
+          </p>
+        </div>
+      </div>
 
       {/* File Upload */}
       <div className="mb-6">
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed border-black rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? 'border-blue-500 bg-blue-50' : 'hover:border-gray-400'
-            }`}
+          className={`border-2 border-dashed border-black rounded-lg p-8 text-center cursor-pointer transition-colors ${
+            isDragActive ? 'border-blue-500 bg-blue-50' : 'hover:border-gray-400'
+          }`}
         >
           <input {...getInputProps()} />
           <div className="text-gray-600">
             {isDragActive ? (
-              <p>Drop the CSV file here...</p>
+              <p className="font-semibold text-blue-600">Drop your file here...</p>
             ) : (
               <div>
-                <p className="text-lg mb-2">Drag & drop a file here, or click to select</p>
-                <p className="text-sm text-gray-500">Supports .csv, .xlsx, .xls files</p>
+                <p className="text-lg mb-2 font-medium">Drag & drop a file here, or click to select</p>
+                <p className="text-xs text-gray-500 font-mono">
+                  Supports .csv, .xlsx, .xls, .json, .sql, .db, .sqlite, .sqlite3 files
+                </p>
               </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Loading state indicator */}
+      {isLoading && (
+        <div className="mb-4 p-4 border border-blue-500 bg-blue-50 text-blue-900 rounded flex items-center gap-3">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+          <span className="text-sm font-medium">{loadingMessage || 'Processing data...'}</span>
+        </div>
+      )}
+
       {csvData.length > 0 && (
         <>
+          {/* Active Database & Table Switcher Bar */}
+          {tables.length > 0 && (
+            <div className="mb-4 p-3 bg-gray-50 border border-black flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold text-black uppercase tracking-wider">📁 Source:</span>
+                <span className="font-mono bg-white px-2 py-1 border border-gray-300">
+                  {currentFileName || "Data Table"}
+                </span>
+
+                {tables.length > 1 && (
+                  <>
+                    <span className="font-bold text-black ml-2">Active Table:</span>
+                    <select
+                      value={currentTable}
+                      onChange={(e) => handleSelectTable(e.target.value)}
+                      className="border border-black bg-white px-2 py-1 font-mono text-xs focus:outline-none"
+                    >
+                      {tables.map(t => (
+                        <option key={t.name} value={t.name}>
+                          {t.name} ({t.rowCount} rows)
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('sql')}
+                  className={`px-3 py-1.5 border border-black font-semibold text-xs transition-colors ${
+                    activeTab === 'sql' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
+                  }`}
+                >
+                  ⚡ Query with SQL
+                </button>
+                {dbInstance && (
+                  <button
+                    onClick={handleExportDb}
+                    className="px-3 py-1.5 border border-black bg-white hover:bg-gray-100 text-xs"
+                    title="Export database to SQLite (.db) file"
+                  >
+                    💾 Export .db
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Navigation Tabs */}
           <div className="mb-6">
             <div className="flex flex-wrap gap-3">
               {[
                 { id: 'table', label: 'Data Table' },
+                { id: 'sql', label: '⚡ SQL Query' },
                 { id: 'stats', label: 'Statistics' },
                 { id: 'charts', label: 'Charts' },
                 { id: 'pivot', label: 'Pivot Table' },
@@ -747,10 +1092,11 @@ const CsvView: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-3 py-2 border border-black font-medium text-sm transition-colors ${activeTab === tab.id
-                    ? 'bg-black text-white'
-                    : 'bg-white text-black hover:bg-gray-100'
-                    }`}
+                  className={`px-3 py-2 border border-black font-medium text-sm transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-black text-white'
+                      : 'bg-white text-black hover:bg-gray-100'
+                  }`}
                 >
                   {tab.label}
                 </button>
@@ -979,6 +1325,22 @@ const CsvView: React.FC = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* SQL Query View */}
+          {activeTab === 'sql' && (
+            <SqlQueryTab
+              db={dbInstance}
+              tables={tables}
+              currentTable={currentTable}
+              onSelectTable={handleSelectTable}
+              onExecuteQuery={handleExecuteQuery}
+              onResetData={handleResetData}
+              queryResult={queryResult}
+              activeQuery={activeQuery}
+              setActiveQuery={setActiveQuery}
+              onExportDb={handleExportDb}
+            />
           )}
 
           {/* Statistics View */}

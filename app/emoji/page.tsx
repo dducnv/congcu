@@ -1,4 +1,5 @@
 import EmojiPage from '@/components/emoji/emoji';
+import JsonLd from '@/components/seo/JsonLd';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -11,20 +12,8 @@ export const metadata: Metadata = {
     'emoji list',
     'copy emoji',
     'paste emoji',
-    'emoji tool',
-    'emoji online',
-    'emoji generator',
-    'smiley emoji',
-    'emoji symbols',
-    'unicode emoji',
     'emoji search',
-    'emoji finder',
-    'emoji selector',
-    'free emoji',
-    'emoji library',
-    'emoji collection',
-    'emoji database',
-    'emoji reference'
+    'unicode emoji',
   ],
   authors: [{ name: 'MultiTools' }],
   creator: 'MultiTools',
@@ -45,38 +34,43 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://tools4u.vercel.app/emoji',
     title: 'Emoji Picker - Copy & Paste Emojis Online',
-    description: 'Free emoji picker tool. Copy and paste emojis easily. Find the perfect emoji for your messages, social media posts, and documents.',
+    description: 'Free emoji picker tool. Copy and paste emojis easily with one click.',
     siteName: 'MultiTools',
-    images: [
-      {
-        url: '/og-emoji-picker.png',
-        width: 1200,
-        height: 630,
-        alt: 'Emoji Picker - Copy & Paste Emojis Online',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Emoji Picker - Copy & Paste Emojis Online',
-    description: 'Free emoji picker tool. Copy and paste emojis easily. Find the perfect emoji for your messages, social media posts, and documents.',
-    images: ['/og-emoji-picker.png'],
+    description: 'Free emoji picker tool. Copy and paste emojis easily with one click.',
   },
   alternates: {
     canonical: 'https://tools4u.vercel.app/emoji',
   },
-  category: 'technology',
-  classification: 'Developer Tools',
-  other: {
-    'application-name': 'Emoji Picker',
-    'apple-mobile-web-app-title': 'Emoji Picker',
-    'msapplication-TileColor': '#000000',
-    'theme-color': '#000000',
+  category: 'utilities',
+  classification: 'Utility Tools',
+};
+
+const emojiSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "MultiTools Emoji Picker & Keyboard",
+  "url": "https://tools4u.vercel.app/emoji",
+  "description": "Search, browse, and copy emojis to clipboard instantly with categorized unicode support.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
   },
 };
 
 const page = () => {
-  return <EmojiPage />
-}
+  return (
+    <>
+      <JsonLd data={emojiSchema} />
+      <EmojiPage />
+    </>
+  );
+};
 
-export default page
+export default page;

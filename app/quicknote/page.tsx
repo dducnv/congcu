@@ -1,9 +1,10 @@
 import { Container, TextareaQuicknote } from "@/components";
+import JsonLd from "@/components/seo/JsonLd";
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Quick Note - Online Notepad & Text Editor | MultiTools',
-  description: 'Free online notepad and text editor with advanced features. Take quick notes, write text, format documents (uppercase, lowercase, title case, sentence case), search & replace, word statistics, auto-save, backup & restore, file import/export (TXT, MD, HTML), multiple tabs, and save your thoughts instantly. No registration required. Works in your browser.',
+  description: 'Free online notepad and text editor with advanced features. Take quick notes, write text, format documents, search & replace, word statistics, and auto-save. No registration required. Works in your browser.',
   keywords: [
     'quick note',
     'online notepad',
@@ -12,26 +13,10 @@ export const metadata: Metadata = {
     'quick notes',
     'text editor online',
     'notepad online',
-    'write text',
     'save notes',
-    'text tool',
-    'writing tool',
-    'note app',
-    'text app',
-    'online editor',
-    'text processor',
-    'note pad',
-    'writing pad',
-    'text area',
-    'note tool',
-    'text utility',
     'text formatting',
-    'search & replace',
     'word statistics',
-    'auto-save',
-    'backup & restore',
-    'file import/export',
-    'multiple tabs'
+    'auto-save notepad',
   ],
   authors: [{ name: 'MultiTools' }],
   creator: 'MultiTools',
@@ -52,38 +37,40 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://tools4u.vercel.app/quicknote',
     title: 'Quick Note - Online Notepad & Text Editor',
-    description: 'Free online notepad and text editor with advanced features. Take quick notes, write text, format documents (uppercase, lowercase, title case, sentence case), search & replace, word statistics, auto-save, backup & restore, file import/export (TXT, MD, HTML), multiple tabs, and save your thoughts instantly. No registration required.',
+    description: 'Free online notepad and text editor with auto-save and word statistics.',
     siteName: 'MultiTools',
-    images: [
-      {
-        url: '/og-quicknote.png',
-        width: 1200,
-        height: 630,
-        alt: 'Quick Note - Online Notepad & Text Editor',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Quick Note - Online Notepad & Text Editor',
-    description: 'Free online notepad and text editor with advanced features. Take quick notes, write text, format documents (uppercase, lowercase, title case, sentence case), search & replace, word statistics, auto-save, backup & restore, file import/export (TXT, MD, HTML), multiple tabs, and save your thoughts instantly. No registration required.',
+    description: 'Free online notepad and text editor with auto-save and word statistics.',
   },
   alternates: {
     canonical: 'https://tools4u.vercel.app/quicknote',
   },
-  category: 'technology',
-  classification: 'Developer Tools',
-  other: {
-    'application-name': 'Quick Note',
-    'apple-mobile-web-app-title': 'Quick Note',
-    'msapplication-TileColor': '#000000',
-    'theme-color': '#000000',
+  category: 'productivity',
+  classification: 'Productivity Tools',
+};
+
+const noteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "MultiTools Quick Note Editor",
+  "url": "https://tools4u.vercel.app/quicknote",
+  "description": "Browser-based notepad with multi-tab support, Markdown formatting, word statistics, and local storage auto-save.",
+  "applicationCategory": "ProductivityApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
   },
 };
 
 const page = () => {
   return (
     <>
+      <JsonLd data={noteSchema} />
       <div className="h-16"></div>
       <Container width="max-w-6xl" className="p-3">
         <TextareaQuicknote />
