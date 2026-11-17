@@ -178,7 +178,7 @@ export function horizontalRule(text: string, sel: Sel): Edit {
 // ---------- line formatting ----------
 
 /** Existing list / quote markers, after indentation has been removed. */
-const MD_PREFIX = /^(?:[-*+•→]\s+\[[ xX]\]\s+|[-*+•→]\s+|\d+[.)]\s+|>\s?)/;
+const MD_PREFIX = /^(?:[-*+•→]\s+\[[ xX]\](?:\s+|$)|[-*+•→](?:\s+|$)|\d+[.)](?:\s+|$)|>\s?)/;
 
 export function setHeading(text: string, sel: Sel, level: number): Edit {
   return mapLines(text, sel, (lines) => {

@@ -41,6 +41,8 @@ export function StatusBar(props: {
   setFontSize: (f: FontSizeMode) => void;
   setReadingFont: (f: ReadingFont) => void;
   onHelp: () => void;
+  /** Theme and font controls belong to the Markdown editor only. */
+  showAppearance: boolean;
 }) {
   const saved = props.saveFailed
     ? "Not saved: browser storage is full or blocked"
@@ -67,54 +69,58 @@ export function StatusBar(props: {
         <span className={props.saveFailed ? "qn-error" : props.pending ? "" : "qn-ok"}>● {saved}</span>
       </div>
       <div className="qn-status-group">
-        <span className="qn-hide-sm">Theme</span>
-        <div className="qn-swatches" role="radiogroup" aria-label="Theme">
-          {THEMES.map(([id, label, color]) => (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={props.theme === id}
-              aria-label={label}
-              title={label}
-              className="qn-swatch"
-              style={{ background: color }}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => props.setTheme(id)}
-            />
-          ))}
-        </div>
-        <div className="qn-sizes" role="radiogroup" aria-label="Preview font">
-          {READING.map(([id, label, name]) => (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={props.readingFont === id}
-              title={`Preview font: ${name}`}
-              className={`qn-font-${id}`}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => props.setReadingFont(id)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="qn-sizes" role="radiogroup" aria-label="Font size">
-          {FONTS.map(([id, label, name]) => (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={props.fontSize === id}
-              title={name}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => props.setFontSize(id)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {props.showAppearance && (
+          <>
+            <span className="qn-hide-sm">Theme</span>
+            <div className="qn-swatches" role="radiogroup" aria-label="Theme">
+              {THEMES.map(([id, label, color]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={props.theme === id}
+                  aria-label={label}
+                  title={label}
+                  className="qn-swatch"
+                  style={{ background: color }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => props.setTheme(id)}
+                />
+              ))}
+            </div>
+            <div className="qn-sizes" role="radiogroup" aria-label="Preview font">
+              {READING.map(([id, label, name]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={props.readingFont === id}
+                  title={`Preview font: ${name}`}
+                  className={`qn-font-${id}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => props.setReadingFont(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="qn-sizes" role="radiogroup" aria-label="Font size">
+              {FONTS.map(([id, label, name]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={props.fontSize === id}
+                  title={name}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => props.setFontSize(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <button type="button" className="qn-btn qn-btn-ghost qn-btn-xs" onClick={props.onHelp} title={`Keyboard shortcuts  ${shortcutFor("help")}`}>
           ? Shortcuts
         </button>

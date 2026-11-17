@@ -77,6 +77,32 @@
   --qn-read-tracking: 0;
 }
 
+/* ---------- page shell: compact note vs full-height Markdown workspace ---------- */
+
+.qn-shell.is-md { height: 100dvh; padding: 8px; }
+.qn-shell.is-note { max-width: 72rem; margin: 0 auto; padding: 4rem 12px 32px; }
+@media (min-width: 1024px) {
+  .qn-shell.is-md { padding: 12px; }
+}
+
+.qn-root.is-note { height: auto; }
+.qn-root.is-note .qn-loading { min-height: 420px; }
+.qn-root.is-note .qn-work,
+.qn-root.is-note .qn-panes,
+.qn-root.is-note .qn-pane,
+.qn-root.is-note .qn-editor-wrap { flex: none; display: block; }
+.qn-root.is-note .qn-panes[data-view] .qn-editor-wrap { max-width: none; margin: 0; border-right: 0; }
+.qn-root.is-note .qn-textarea {
+  display: block;
+  width: 100%;
+  height: 420px;
+  min-height: 200px;
+  padding: 12px 14px;
+  resize: vertical;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
 .qn-root.is-fullscreen {
   position: fixed;
   inset: 0;
@@ -140,6 +166,34 @@
 .qn-btn-icon { min-width: 30px; padding: 4px 6px; text-align: center; font-weight: 600; }
 .qn-btn-xs { font-size: 11px; padding: 1px 6px; }
 .qn-mark-icon { background: var(--qn-mark); padding: 0 3px; border-radius: 2px; }
+
+/* MD switch */
+.qn-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--qn-fg);
+  background: var(--qn-bg);
+  border: 1px solid var(--qn-border);
+  border-radius: 5px;
+  padding: 4px 8px 4px 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.qn-mode:hover { background: var(--qn-hover); }
+.qn-mode:focus-visible { outline: 2px solid var(--qn-focus); outline-offset: 1px; }
+.qn-mode.is-on { background: var(--qn-accent); color: var(--qn-accent-fg); border-color: var(--qn-accent); }
+.qn-mode-track { position: relative; width: 28px; height: 16px; border-radius: 999px; background: var(--qn-border); transition: background 0.15s; }
+.qn-mode.is-on .qn-mode-track { background: color-mix(in srgb, var(--qn-accent-fg) 40%, transparent); }
+.qn-mode-thumb { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #ffffff; transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+.qn-mode.is-on .qn-mode-thumb { transform: translateX(12px); }
+@media (prefers-reduced-motion: reduce) {
+  .qn-mode-track, .qn-mode-thumb { transition: none; }
+}
 .qn-svg { width: 15px; height: 15px; vertical-align: -3px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
 .qn-seg { display: flex; border: 1px solid var(--qn-border); border-radius: 5px; overflow: hidden; flex-shrink: 0; }

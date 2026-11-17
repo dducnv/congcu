@@ -72,9 +72,7 @@ const page = () => {
     <>
       <JsonLd data={noteSchema} />
       <h1 className="sr-only">Quick Note: online notepad and Markdown editor</h1>
-      <div className="h-[100dvh] p-2 lg:p-3">
-        <TextareaQuicknote />
-      </div>
+      <TextareaQuicknote />
     </>
   );
 };

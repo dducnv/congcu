@@ -13,7 +13,11 @@ export type ThemeMode = "light" | "sepia" | "lightgray" | "dark" | "deepdark";
 export type FontSizeMode = "small" | "normal" | "large" | "xlarge";
 export type ReadingFont = "sans" | "serif";
 
+/** "note": compact plain-text notepad. "md": full-height Markdown workspace. */
+export type EditorMode = "note" | "md";
+
 export type Prefs = {
+  mode: EditorMode;
   view: ViewMode;
   theme: ThemeMode;
   fontSize: FontSizeMode;

@@ -5,12 +5,14 @@ import { useMemo, useRef, useState } from "react";
 import type { CommandId } from "./shortcuts";
 import { tipFor } from "./shortcuts";
 import { TEMPLATES } from "./templates";
-import type { ViewMode } from "./types";
+import type { EditorMode, ViewMode } from "./types";
 import { Btn, Popover, PrefixIcon, RowLabel, Sep } from "./ui";
 
 // ---------- A: command bar ----------
 
 export function CommandBar(props: {
+  mode: EditorMode;
+  setMode: (m: EditorMode) => void;
   view: ViewMode;
   setView: (v: ViewMode) => void;
   showToc: boolean;
@@ -27,6 +29,7 @@ export function CommandBar(props: {
   onCopy: (kind: "md" | "text" | "rich") => void;
   saveExt: string;
 }) {
+  const md = props.mode === "md";
   const views: Array<[ViewMode, string]> = [
     ["write", "Write"],
     ["split", "Split"],
@@ -41,9 +44,11 @@ export function CommandBar(props: {
         <Btn tip={`Download as .${props.saveExt}  ·  Shift+click for .${props.saveExt === "txt" ? "md" : "txt"}`} onClick={(e) => props.onSave(e.shiftKey)}>
           Save
         </Btn>
-        <Btn tip="Download as a styled HTML page" onClick={props.onExportHtml}>
-          Export HTML
-        </Btn>
+        {md && (
+          <Btn tip="Download as a styled HTML page" onClick={props.onExportHtml}>
+            Export HTML
+          </Btn>
+        )}
         <Sep />
         <Btn tip="Download an encrypted backup of every tab" onClick={props.onBackup}>
           Backup
@@ -52,40 +57,69 @@ export function CommandBar(props: {
           Restore
         </Btn>
         <Sep />
-        <Btn variant="outline" tip="Copy the markdown source" onClick={() => props.onCopy("md")}>
-          Copy MD
-        </Btn>
-        <Btn variant="outline" tip="Copy as plain text without markdown symbols" onClick={() => props.onCopy("text")}>
-          Copy text
-        </Btn>
-        <Btn variant="outline" tip="Copy formatted text for Docs, Mail, Slack" onClick={() => props.onCopy("rich")}>
-          Copy rich
-        </Btn>
+        {md ? (
+          <>
+            <Btn variant="outline" tip="Copy the markdown source" onClick={() => props.onCopy("md")}>
+              Copy MD
+            </Btn>
+            <Btn variant="outline" tip="Copy as plain text without markdown symbols" onClick={() => props.onCopy("text")}>
+              Copy text
+            </Btn>
+            <Btn variant="outline" tip="Copy formatted text for Docs, Mail, Slack" onClick={() => props.onCopy("rich")}>
+              Copy rich
+            </Btn>
+          </>
+        ) : (
+          <Btn variant="outline" tip="Copy the whole note" onClick={() => props.onCopy("md")}>
+            Copy
+          </Btn>
+        )}
       </div>
       <div className="qn-group">
-        <Btn tip="Table of contents" active={props.showToc} onClick={props.toggleToc}>
-          TOC
-        </Btn>
+        {md && (
+          <Btn tip="Table of contents" active={props.showToc} onClick={props.toggleToc}>
+            TOC
+          </Btn>
+        )}
         <Btn tip={tipFor("Search & replace", "search")} active={props.searchOpen} onClick={props.toggleSearch}>
           Search
         </Btn>
+        {md && (
+          <>
+            <Sep />
+            <div className="qn-seg" role="group" aria-label="View" data-tip={tipFor("Switch view", "cycleView")}>
+              {views.map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={props.view === v}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => props.setView(v)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <Btn tip={tipFor(props.fullscreen ? "Exit full screen" : "Full screen", "fullscreen")} active={props.fullscreen} onClick={props.toggleFullscreen}>
+              {props.fullscreen ? "Exit full screen" : "Full screen"}
+            </Btn>
+          </>
+        )}
         <Sep />
-        <div className="qn-seg" role="group" aria-label="View" data-tip={tipFor("Switch view", "cycleView")}>
-          {views.map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              aria-pressed={props.view === v}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => props.setView(v)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <Btn tip={tipFor(props.fullscreen ? "Exit full screen" : "Full screen", "fullscreen")} active={props.fullscreen} onClick={props.toggleFullscreen}>
-          {props.fullscreen ? "Exit full screen" : "Full screen"}
-        </Btn>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={md}
+          className={`qn-mode${md ? " is-on" : ""}`}
+          data-tip={md ? "Back to the plain note" : "Markdown editor with preview"}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => props.setMode(md ? "note" : "md")}
+        >
+          <span>MD</span>
+          <span className="qn-mode-track" aria-hidden>
+            <span className="qn-mode-thumb" />
+          </span>
+        </button>
       </div>
     </div>
   );
@@ -189,10 +223,13 @@ export function TextBar({
   run,
   insert,
   insertTemplate,
+  markdown,
 }: {
   run: (id: CommandId) => void;
   insert: (s: string) => void;
   insertTemplate: (s: string) => void;
+  /** Templates are Markdown, so they only show in the MD editor. */
+  markdown: boolean;
 }) {
   const emojiBtn = useRef<HTMLButtonElement>(null);
   const tplBtn = useRef<HTMLButtonElement>(null);
@@ -230,9 +267,11 @@ export function TextBar({
       <Btn ref={emojiBtn} tip="Insert emoji" active={open === "emoji"} onClick={() => setOpen(open === "emoji" ? null : "emoji")}>
         Emoji
       </Btn>
-      <Btn ref={tplBtn} tip="Insert a template" active={open === "tpl"} onClick={() => setOpen(open === "tpl" ? null : "tpl")}>
-        Templates
-      </Btn>
+      {markdown && (
+        <Btn ref={tplBtn} tip="Insert a template" active={open === "tpl"} onClick={() => setOpen(open === "tpl" ? null : "tpl")}>
+          Templates
+        </Btn>
+      )}
 
       {open === "emoji" && (
         <Popover anchor={emojiBtn.current} onClose={close} width={300}>

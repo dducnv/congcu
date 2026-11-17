@@ -14,7 +14,7 @@ import { ShortcutHelp, StatusBar } from "./status_bar";
 import { TabBar } from "./tab_bar";
 import * as T from "./text_commands";
 import { CommandBar, MarkdownBar, TextBar } from "./toolbars";
-import type { Edit, Sel, ViewMode } from "./types";
+import type { Edit, EditorMode, Sel, ViewMode } from "./types";
 import { TooltipView, ToastView, useToast, useTooltip } from "./ui";
 import { useNotes } from "./use_notes";
 
@@ -66,6 +66,12 @@ const COMMANDS: Record<CommandId, Fn> = {
 /** Commands that act on the whole tab when nothing is selected. */
 const WHOLE_TAB = new Set<CommandId>(["upper", "lower", "title", "sentence", "capLines", "cleanSpaces", "joinLines", "removeBlank", "sort", "dedupe", "stripMd"]);
 
+/** Shortcuts that only make sense in the Markdown editor; the plain note ignores them. */
+const MARKDOWN_ONLY = new Set<CommandId>([
+  "bold", "italic", "strike", "inlineCode", "highlight", "h1", "h2", "h3", "paragraph",
+  "ul", "ol", "task", "quote", "link", "image", "table", "codeBlock", "hr",
+]);
+
 const COMMAND_LABEL: Partial<Record<CommandId, string>> = {
   upper: "UPPERCASE", lower: "lowercase", title: "Title Case", sentence: "Sentence case", capLines: "Cap lines",
   cleanSpaces: "Clean spaces", joinLines: "Join lines", removeBlank: "Remove blank", sort: "Sort", dedupe: "Dedupe", stripMd: "Strip MD",
@@ -115,7 +121,9 @@ function isHidden(el: HTMLElement) {
 export const TextareaQuicknote = () => {
   const notes = useNotes();
   const { prefs, setPrefs, active, activeId, updateNotes, importTabs, openTabs, restoreTab, setActiveId, flush, addTab: addNoteTab, closeTab: closeNoteTab } = notes;
-  const view = prefs.view;
+  // Note mode is the compact plain-text notepad; MD mode is the full Markdown workspace.
+  const mdMode = prefs.mode === "md";
+  const view: ViewMode = mdMode ? prefs.view : "write";
   const tabsRef = useRef(notes.tabs);
   tabsRef.current = notes.tabs;
 
@@ -231,7 +239,7 @@ export const TextareaQuicknote = () => {
     const mod = e.metaKey || e.ctrlKey;
 
     const cmd = matchEditorShortcut(e);
-    if (cmd) {
+    if (cmd && (mdMode || !MARKDOWN_ONLY.has(cmd))) {
       e.preventDefault();
       run(cmd);
       return;
@@ -253,6 +261,8 @@ export const TextareaQuicknote = () => {
       }
       return;
     }
+    // Auto-closing pairs are a Markdown nicety; the plain note types characters as-is.
+    if (!mdMode) return;
     if (e.key === "Backspace" && !mod && !e.altKey) {
       const edit = T.deletePair(el.value, sel);
       if (edit) {
@@ -273,7 +283,7 @@ export const TextareaQuicknote = () => {
 
   const onPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
-    if (el.selectionStart === el.selectionEnd) return;
+    if (!mdMode || el.selectionStart === el.selectionEnd) return;
     const pasted = e.clipboardData.getData("text/plain").trim();
     if (!/^https?:\/\/\S+$/.test(pasted)) return;
     e.preventDefault();
@@ -281,17 +291,18 @@ export const TextareaQuicknote = () => {
   };
 
   // ----- files -----
+  const saveExt = active?.ext ?? (mdMode ? "md" : "txt");
   const saveFile = useCallback(
     (asTxt: boolean) => {
       if (!active) return;
       if (!active.notes) return show("This tab is empty, nothing to save");
-      const base = active.ext ?? "md";
+      const base = saveExt;
       const ext = asTxt ? (base === "txt" ? "md" : "txt") : base;
       const name = `${safeFileName(active.file_name)}.${ext}`;
       downloadBlob(name, new Blob([active.notes], { type: "text/plain;charset=utf-8" }));
       show(`Downloaded ${name}`);
     },
-    [active, show],
+    [active, saveExt, show],
   );
 
   const restoreFrom = useCallback(
@@ -408,7 +419,7 @@ export const TextareaQuicknote = () => {
           return show("Copied as plain text. This browser does not allow rich text copy.");
         }
       }
-      show(kind === "md" ? "Copied markdown" : kind === "text" ? "Copied plain text" : "Copied rich text");
+      show(kind === "md" ? (mdMode ? "Copied markdown" : "Copied") : kind === "text" ? "Copied plain text" : "Copied rich text");
     } catch {
       show("The browser blocked clipboard access", { tone: "error" });
     }
@@ -465,7 +476,7 @@ export const TextareaQuicknote = () => {
   const gutterEl = useCallback(() => rootRef.current?.querySelector<HTMLElement>(".qn-gutter-inner") ?? null, []);
   const totalLines = useMemo(() => deferredText.split("\n").length, [deferredText]);
   const { onEditorScroll, onPreviewScroll } = useScrollSync({
-    enabled: notes.loaded && view === "split",
+    enabled: notes.loaded && mdMode && view === "split",
     editorRef: taRef,
     previewRef,
     gutter: gutterEl,
@@ -530,7 +541,7 @@ export const TextareaQuicknote = () => {
       switch (id) {
         case "save":
           flush();
-          show("Saved in this browser", { action: { label: `Download .${active?.ext ?? "md"}`, run: () => saveFile(false) } });
+          show("Saved in this browser", { action: { label: `Download .${saveExt}`, run: () => saveFile(false) } });
           break;
         case "open":
           openFiles();
@@ -543,13 +554,13 @@ export const TextareaQuicknote = () => {
           } else setSearchOpen(true);
           break;
         case "cycleView":
-          setPrefs({ view: VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length] });
+          if (mdMode) setPrefs({ view: VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length] });
           break;
         case "help":
           setHelpOpen((v) => !v);
           break;
         case "fullscreen":
-          setFullscreen((v) => !v);
+          if (mdMode) setFullscreen((v) => !v);
           break;
         case "newTab":
           addTab();
@@ -558,7 +569,7 @@ export const TextareaQuicknote = () => {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active?.ext, addTab, flush, helpOpen, openFiles, saveFile, searchOpen, setPrefs, show, view]);
+  }, [addTab, flush, helpOpen, mdMode, openFiles, saveExt, saveFile, searchOpen, setPrefs, show, view]);
 
   // ----- drag & drop -----
   const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
@@ -591,154 +602,171 @@ export const TextareaQuicknote = () => {
   const showEditor = view !== "read";
   const showPreview = view !== "write";
 
+  const setMode = (mode: EditorMode) => {
+    if (mode === "note") setFullscreen(false);
+    setPrefs({ mode });
+    requestAnimationFrame(() => taRef.current?.focus({ preventScroll: true }));
+  };
+
   return (
-    <div
-      ref={rootRef}
-      className={`qn-root ${fontVariables}${fullscreen ? " is-fullscreen" : ""}`}
-      data-qn-theme={prefs.theme}
-      data-qn-font={prefs.fontSize}
-      data-qn-reading={prefs.readingFont}
-      {...dragHandlers}
-    >
-      {!notes.loaded || !active ? (
-        <div className="qn-loading">Loading notes…</div>
-      ) : (
-        <>
-          <CommandBar
-            view={view}
-            setView={(v) => setPrefs({ view: v })}
-            showToc={prefs.showToc}
-            toggleToc={() => setPrefs({ showToc: !prefs.showToc })}
-            searchOpen={searchOpen}
-            toggleSearch={() => setSearchOpen((v) => !v)}
-            fullscreen={fullscreen}
-            toggleFullscreen={() => setFullscreen((v) => !v)}
-            onOpen={openFiles}
-            onSave={saveFile}
-            onExportHtml={exportHtml}
-            onBackup={backup}
-            onRestore={restore}
-            onCopy={copy}
-            saveExt={active.ext ?? "md"}
-          />
-          <TabBar
-            tabs={notes.tabs}
-            activeId={activeId}
-            pending={notes.pending}
-            onSelect={notes.setActiveId}
-            onClose={closeTab}
-            onRename={notes.renameTab}
-            onAdd={addTab}
-          />
-          <MarkdownBar run={run} history={history} />
-          <TextBar run={run} insert={insert} insertTemplate={insertTemplate} />
-          {searchOpen && (
-            <SearchPanel
-              text={text}
-              onSelectMatch={selectMatch}
-              onReplace={replaceMatch}
-              onReplaceAll={replaceAll}
-              onClose={() => {
-                setSearchOpen(false);
-                taRef.current?.focus();
-              }}
+    <div className={`qn-shell ${mdMode ? "is-md" : "is-note"}`}>
+      <div
+        ref={rootRef}
+        className={`qn-root ${fontVariables}${mdMode ? "" : " is-note"}${fullscreen ? " is-fullscreen" : ""}`}
+        data-qn-theme={mdMode ? prefs.theme : "light"}
+        data-qn-font={mdMode ? prefs.fontSize : "normal"}
+        data-qn-reading={prefs.readingFont}
+        {...dragHandlers}
+      >
+        {!notes.loaded || !active ? (
+          <div className="qn-loading">Loading notes…</div>
+        ) : (
+          <>
+            <CommandBar
+              mode={prefs.mode}
+              setMode={setMode}
+              view={view}
+              setView={(v) => setPrefs({ view: v })}
+              showToc={prefs.showToc}
+              toggleToc={() => setPrefs({ showToc: !prefs.showToc })}
+              searchOpen={searchOpen}
+              toggleSearch={() => setSearchOpen((v) => !v)}
+              fullscreen={fullscreen}
+              toggleFullscreen={() => setFullscreen((v) => !v)}
+              onOpen={openFiles}
+              onSave={saveFile}
+              onExportHtml={exportHtml}
+              onBackup={backup}
+              onRestore={restore}
+              onCopy={copy}
+              saveExt={saveExt}
             />
-          )}
-
-          <div className="qn-work">
-            {prefs.showToc && (
-              <nav className="qn-toc" aria-label="Table of contents">
-                <div className="qn-toc-title">Contents</div>
-                {toc.length ? (
-                  toc.map((item) => (
-                    <button
-                      key={`${item.line}-${item.text}`}
-                      type="button"
-                      className="qn-toc-item"
-                      style={{ paddingLeft: 8 + (item.level - 1) * 12 }}
-                      onClick={() => jumpToLine(item.line)}
-                      title={item.text}
-                    >
-                      {item.text}
-                    </button>
-                  ))
-                ) : (
-                  <p className="qn-muted qn-toc-empty">Headings (# Title) show up here.</p>
-                )}
-              </nav>
+            <TabBar
+              tabs={notes.tabs}
+              activeId={activeId}
+              pending={notes.pending}
+              onSelect={notes.setActiveId}
+              onClose={closeTab}
+              onRename={notes.renameTab}
+              onAdd={addTab}
+            />
+            {mdMode && <MarkdownBar run={run} history={history} />}
+            <TextBar run={run} insert={insert} insertTemplate={insertTemplate} markdown={mdMode} />
+            {searchOpen && (
+              <SearchPanel
+                text={text}
+                onSelectMatch={selectMatch}
+                onReplace={replaceMatch}
+                onReplaceAll={replaceAll}
+                onClose={() => {
+                  setSearchOpen(false);
+                  taRef.current?.focus();
+                }}
+              />
             )}
-
-            <div className="qn-panes" data-view={view}>
-              <div className="qn-pane qn-editor-pane" hidden={!showEditor}>
-                <div className="qn-editor-wrap">
-                  <LineGutter text={text} textarea={ta} activeLine={cursor.line} fontKey={prefs.fontSize} />
-                  <textarea
-                    key={activeId}
-                    ref={setTextarea}
-                    className="qn-textarea qn-editor-font"
-                    value={text}
-                    onChange={(e) => updateNotes(activeId, e.target.value)}
-                    onKeyDown={onKeyDown}
-                    onPaste={onPaste}
-                    onSelect={updateCursor}
-                    onScroll={onTextareaScroll}
-                    spellCheck
-                    aria-label={`Note: ${active.file_name}`}
-                    placeholder={"Start writing. Markdown works here: # Heading, **bold**, - list, - [ ] task.\nDrop .md or .txt files anywhere to open them."}
-                  />
+  
+            <div className="qn-work">
+              {mdMode && prefs.showToc && (
+                <nav className="qn-toc" aria-label="Table of contents">
+                  <div className="qn-toc-title">Contents</div>
+                  {toc.length ? (
+                    toc.map((item) => (
+                      <button
+                        key={`${item.line}-${item.text}`}
+                        type="button"
+                        className="qn-toc-item"
+                        style={{ paddingLeft: 8 + (item.level - 1) * 12 }}
+                        onClick={() => jumpToLine(item.line)}
+                        title={item.text}
+                      >
+                        {item.text}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="qn-muted qn-toc-empty">Headings (# Title) show up here.</p>
+                  )}
+                </nav>
+              )}
+  
+              <div className="qn-panes" data-view={view}>
+                <div className="qn-pane qn-editor-pane" hidden={!showEditor}>
+                  <div className="qn-editor-wrap">
+                    {mdMode && <LineGutter text={text} textarea={ta} activeLine={cursor.line} fontKey={prefs.fontSize} />}
+                    <textarea
+                      key={activeId}
+                      ref={setTextarea}
+                      className="qn-textarea qn-editor-font"
+                      value={text}
+                      onChange={(e) => updateNotes(activeId, e.target.value)}
+                      onKeyDown={onKeyDown}
+                      onPaste={onPaste}
+                      onSelect={updateCursor}
+                      onScroll={onTextareaScroll}
+                      spellCheck
+                      aria-label={`Note: ${active.file_name}`}
+                      placeholder={
+                        mdMode
+                          ? "Start writing. Markdown works here: # Heading, **bold**, - list, - [ ] task.\nDrop .md or .txt files anywhere to open them."
+                          : "Enter content. Drop .txt or .md files here to open them."
+                      }
+                    />
+                  </div>
                 </div>
+                {mdMode && (
+                  <div className="qn-pane qn-preview-pane" hidden={!showPreview}>
+                    <MarkdownPreview
+                      ref={previewRef}
+                      markdown={deferredText}
+                      className="qn-preview prose-quicknote"
+                      onToggleTask={toggleTask}
+                      onOpenTab={openTabByName}
+                      onScroll={onPreviewScroll}
+                    />
+                  </div>
+                )}
               </div>
-              <div className="qn-pane qn-preview-pane" hidden={!showPreview}>
-                <MarkdownPreview
-                  ref={previewRef}
-                  markdown={deferredText}
-                  className="qn-preview prose-quicknote"
-                  onToggleTask={toggleTask}
-                  onOpenTab={openTabByName}
-                  onScroll={onPreviewScroll}
-                />
+            </div>
+  
+            <StatusBar
+              line={cursor.line}
+              col={cursor.col}
+              selWords={cursor.selWords}
+              selChars={cursor.selChars}
+              stats={stats}
+              pending={notes.pending}
+              savedAt={notes.savedAt}
+              saveFailed={notes.saveFailed}
+              theme={prefs.theme}
+              fontSize={prefs.fontSize}
+              readingFont={prefs.readingFont}
+              setTheme={(t) => setPrefs({ theme: t })}
+              setFontSize={(f) => setPrefs({ fontSize: f })}
+              setReadingFont={(f) => setPrefs({ readingFont: f })}
+              onHelp={() => setHelpOpen(true)}
+              showAppearance={mdMode}
+            />
+          </>
+        )}
+  
+        {dragging && (
+          <div className="qn-drop" aria-hidden>
+            <div className="qn-drop-inner">
+              <div className="qn-drop-arrow">↓</div>
+              <div className="qn-drop-title">Drop files to open</div>
+              <div className="qn-muted">Each file opens in its own tab. Several files at once work too.</div>
+              <div className="qn-drop-types">
+                <span>.md</span>
+                <span>.markdown</span>
+                <span>.txt</span>
+                <span>backup</span>
               </div>
             </div>
           </div>
-
-          <StatusBar
-            line={cursor.line}
-            col={cursor.col}
-            selWords={cursor.selWords}
-            selChars={cursor.selChars}
-            stats={stats}
-            pending={notes.pending}
-            savedAt={notes.savedAt}
-            saveFailed={notes.saveFailed}
-            theme={prefs.theme}
-            fontSize={prefs.fontSize}
-            readingFont={prefs.readingFont}
-            setTheme={(t) => setPrefs({ theme: t })}
-            setFontSize={(f) => setPrefs({ fontSize: f })}
-            setReadingFont={(f) => setPrefs({ readingFont: f })}
-            onHelp={() => setHelpOpen(true)}
-          />
-        </>
-      )}
-
-      {dragging && (
-        <div className="qn-drop" aria-hidden>
-          <div className="qn-drop-inner">
-            <div className="qn-drop-arrow">↓</div>
-            <div className="qn-drop-title">Drop files to open</div>
-            <div className="qn-muted">Each file opens in its own tab. Several files at once work too.</div>
-            <div className="qn-drop-types">
-              <span>.md</span>
-              <span>.markdown</span>
-              <span>.txt</span>
-              <span>backup</span>
-            </div>
-          </div>
-        </div>
-      )}
-      {helpOpen && <ShortcutHelp onClose={() => setHelpOpen(false)} />}
-      <ToastView toast={toast} onDismiss={dismiss} />
-      <TooltipView tip={tip} />
+        )}
+        {helpOpen && <ShortcutHelp onClose={() => setHelpOpen(false)} />}
+        <ToastView toast={toast} onDismiss={dismiss} />
+        <TooltipView tip={tip} />
+      </div>
     </div>
   );
 };
