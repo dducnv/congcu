@@ -1,7 +1,7 @@
 "use client";
 
 import { HELP_SECTIONS, shortcutFor, type CommandId, type GlobalId } from "./shortcuts";
-import type { FontSizeMode, ThemeMode } from "./types";
+import type { FontSizeMode, ReadingFont, ThemeMode } from "./types";
 
 export const THEMES: Array<[ThemeMode, string, string]> = [
   ["light", "Light", "#ffffff"],
@@ -11,10 +11,16 @@ export const THEMES: Array<[ThemeMode, string, string]> = [
   ["deepdark", "Deep dark", "#000000"],
 ];
 
-const FONTS: Array<[FontSizeMode, string]> = [
-  ["normal", "A"],
-  ["large", "A+"],
-  ["xlarge", "A++"],
+const FONTS: Array<[FontSizeMode, string, string]> = [
+  ["small", "A-", "Small text"],
+  ["normal", "A", "Normal text"],
+  ["large", "A+", "Large text"],
+  ["xlarge", "A++", "Extra large text"],
+];
+
+const READING: Array<[ReadingFont, string, string]> = [
+  ["sans", "Sans", "Be Vietnam Pro"],
+  ["serif", "Serif", "Literata"],
 ];
 
 export type Stats = { words: number; chars: number; minutes: number };
@@ -30,8 +36,10 @@ export function StatusBar(props: {
   saveFailed: boolean;
   theme: ThemeMode;
   fontSize: FontSizeMode;
+  readingFont: ReadingFont;
   setTheme: (t: ThemeMode) => void;
   setFontSize: (f: FontSizeMode) => void;
+  setReadingFont: (f: ReadingFont) => void;
   onHelp: () => void;
 }) {
   const saved = props.saveFailed
@@ -76,13 +84,30 @@ export function StatusBar(props: {
             />
           ))}
         </div>
+        <div className="qn-sizes" role="radiogroup" aria-label="Preview font">
+          {READING.map(([id, label, name]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={props.readingFont === id}
+              title={`Preview font: ${name}`}
+              className={`qn-font-${id}`}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => props.setReadingFont(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="qn-sizes" role="radiogroup" aria-label="Font size">
-          {FONTS.map(([id, label]) => (
+          {FONTS.map(([id, label, name]) => (
             <button
               key={id}
               type="button"
               role="radio"
               aria-checked={props.fontSize === id}
+              title={name}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => props.setFontSize(id)}
             >

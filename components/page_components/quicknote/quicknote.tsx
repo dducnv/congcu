@@ -3,7 +3,9 @@
 import { decryptData, encryptData } from "@/core/utils";
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { applyEdit, applyToString, downloadBlob, pickFiles, safeFileName } from "./dom_edit";
+import { fontVariables } from "./fonts";
 import { LineGutter } from "./line_gutter";
+import { useScrollSync } from "./scroll_sync";
 import { MarkdownPreview } from "./markdown_preview";
 import "./quicknote.css";
 import { SearchPanel, findMatches, type Match } from "./search_panel";
@@ -121,7 +123,6 @@ export const TextareaQuicknote = () => {
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const [ta, setTa] = useState<HTMLTextAreaElement | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-  const syncing = useRef(false);
   const focusNext = useRef(false);
   const dragDepth = useRef(0);
   const viewState = useRef<Record<string, { start: number; end: number; top: number }>>({});
@@ -443,8 +444,9 @@ export const TextareaQuicknote = () => {
 
   const jumpToLine = useCallback(
     (line: number) => {
-      if (view !== "write") {
-        previewRef.current?.querySelector(`[data-line="${line}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+      if (view === "read") {
+        // In Split view the editor jump below moves the preview through scroll sync.
+        previewRef.current?.querySelector(`[data-line="${line}"]`)?.scrollIntoView({ block: "start" });
       }
       const el = taRef.current;
       if (!el || isHidden(el)) return;
@@ -460,15 +462,25 @@ export const TextareaQuicknote = () => {
   );
 
   // ----- scroll sync (split view) -----
-  const syncScroll = (from: HTMLElement | null, to: HTMLElement | null) => {
-    if (view !== "split" || syncing.current || !from || !to) return;
-    syncing.current = true;
-    const ratio = from.scrollTop / Math.max(1, from.scrollHeight - from.clientHeight);
-    to.scrollTop = ratio * (to.scrollHeight - to.clientHeight);
-    requestAnimationFrame(() => {
-      syncing.current = false;
-    });
-  };
+  const gutterEl = useCallback(() => rootRef.current?.querySelector<HTMLElement>(".qn-gutter-inner") ?? null, []);
+  const totalLines = useMemo(() => deferredText.split("\n").length, [deferredText]);
+  const { onEditorScroll, onPreviewScroll } = useScrollSync({
+    enabled: notes.loaded && view === "split",
+    editorRef: taRef,
+    previewRef,
+    gutter: gutterEl,
+    totalLines,
+    contentKey: `${activeId}|${prefs.fontSize}|${prefs.readingFont}|${prefs.showToc}|${deferredText}`,
+  });
+
+  const onTextareaScroll = useCallback(
+    (e: React.UIEvent<HTMLTextAreaElement>) => {
+      const el = e.currentTarget;
+      if (activeId) viewState.current[activeId] = { start: el.selectionStart, end: el.selectionEnd, top: el.scrollTop };
+      onEditorScroll();
+    },
+    [activeId, onEditorScroll],
+  );
 
   // ----- search -----
   const selectMatch = useCallback((m: Match) => {
@@ -582,9 +594,10 @@ export const TextareaQuicknote = () => {
   return (
     <div
       ref={rootRef}
-      className={`qn-root${fullscreen ? " is-fullscreen" : ""}`}
+      className={`qn-root ${fontVariables}${fullscreen ? " is-fullscreen" : ""}`}
       data-qn-theme={prefs.theme}
       data-qn-font={prefs.fontSize}
+      data-qn-reading={prefs.readingFont}
       {...dragHandlers}
     >
       {!notes.loaded || !active ? (
@@ -668,10 +681,7 @@ export const TextareaQuicknote = () => {
                     onKeyDown={onKeyDown}
                     onPaste={onPaste}
                     onSelect={updateCursor}
-                    onScroll={(e) => {
-                      if (activeId) viewState.current[activeId] = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd, top: e.currentTarget.scrollTop };
-                      syncScroll(e.currentTarget, previewRef.current);
-                    }}
+                    onScroll={onTextareaScroll}
                     spellCheck
                     aria-label={`Note: ${active.file_name}`}
                     placeholder={"Start writing. Markdown works here: # Heading, **bold**, - list, - [ ] task.\nDrop .md or .txt files anywhere to open them."}
@@ -685,7 +695,7 @@ export const TextareaQuicknote = () => {
                   className="qn-preview prose-quicknote"
                   onToggleTask={toggleTask}
                   onOpenTab={openTabByName}
-                  onScroll={(e) => syncScroll(e.currentTarget, taRef.current)}
+                  onScroll={onPreviewScroll}
                 />
               </div>
             </div>
@@ -702,8 +712,10 @@ export const TextareaQuicknote = () => {
             saveFailed={notes.saveFailed}
             theme={prefs.theme}
             fontSize={prefs.fontSize}
+            readingFont={prefs.readingFont}
             setTheme={(t) => setPrefs({ theme: t })}
             setFontSize={(f) => setPrefs({ fontSize: f })}
+            setReadingFont={(f) => setPrefs({ readingFont: f })}
             onHelp={() => setHelpOpen(true)}
           />
         </>

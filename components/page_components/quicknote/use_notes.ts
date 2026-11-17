@@ -9,7 +9,7 @@ const STORAGE_KEY = "textNotesList";
 const ACTIVE_KEY = "quicknote:active";
 const PREFS_KEY = "quicknote:prefs";
 
-const DEFAULT_PREFS: Prefs = { view: "split", theme: "light", fontSize: "normal", showToc: false };
+const DEFAULT_PREFS: Prefs = { view: "split", theme: "light", fontSize: "normal", readingFont: "sans", showToc: false };
 
 function read(key: string) {
   try {

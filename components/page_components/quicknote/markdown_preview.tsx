@@ -53,7 +53,7 @@ function nodeText(node: React.ReactNode): string {
 
 // ---------- code blocks ----------
 
-const CodeBlock = memo(function CodeBlock({ code, lang }: { code: string; lang?: string }) {
+const CodeBlock = memo(function CodeBlock({ code, lang, line }: { code: string; lang?: string; line?: number }) {
   const [copied, setCopied] = useState(false);
   const html = useMemo(() => {
     if (!lang || !hljs.getLanguage(lang)) return null;
@@ -75,7 +75,7 @@ const CodeBlock = memo(function CodeBlock({ code, lang }: { code: string; lang?:
   };
 
   return (
-    <div className="qn-code">
+    <div className="qn-code" data-line={line}>
       <div className="qn-code-head" data-export="skip">
         <span>{lang ?? ""}</span>
         <button type="button" onClick={copy}>
@@ -121,7 +121,7 @@ function loadMermaid() {
   return mermaidLoader;
 }
 
-const MermaidBlock = memo(function MermaidBlock({ code }: { code: string }) {
+const MermaidBlock = memo(function MermaidBlock({ code, line }: { code: string; line?: number }) {
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -147,9 +147,9 @@ const MermaidBlock = memo(function MermaidBlock({ code }: { code: string }) {
     };
   }, [code]);
 
-  if (svg) return <div className="qn-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />;
+  if (svg) return <div className="qn-mermaid" data-line={line} dangerouslySetInnerHTML={{ __html: svg }} />;
   return (
-    <div className="qn-code">
+    <div className="qn-code" data-line={line}>
       {error && <div className="qn-mermaid-error">Mermaid: {error}</div>}
       <pre>
         <code className="hljs">{code}</code>
@@ -162,34 +162,37 @@ const MermaidBlock = memo(function MermaidBlock({ code }: { code: string }) {
 
 type WithNode = { node?: { position?: { start: { line: number } } } };
 
-function heading(level: number) {
-  const H = ({ node, children, ...props }: React.HTMLAttributes<HTMLHeadingElement> & WithNode) =>
-    React.createElement(`h${level}`, { ...props, "data-line": node?.position?.start.line }, children);
-  H.displayName = `QnH${level}`;
-  return H;
+/** Source line of a markdown node; used for scroll sync, TOC jumps and checklists. */
+const lineOf = (node: unknown) => (node as WithNode["node"])?.position?.start.line;
+
+/** Renders `tag` with a data-line attribute pointing at its source line. */
+function withLine(tag: string) {
+  const C = ({ node, children, ...props }: React.HTMLAttributes<HTMLElement> & WithNode) =>
+    React.createElement(tag, { ...props, "data-line": lineOf(node) }, children);
+  C.displayName = `QnLine(${tag})`;
+  return C;
 }
 
 const components: Components = {
-  h1: heading(1),
-  h2: heading(2),
-  h3: heading(3),
-  h4: heading(4),
-  h5: heading(5),
-  h6: heading(6),
-  pre({ children }) {
+  h1: withLine("h1"),
+  h2: withLine("h2"),
+  h3: withLine("h3"),
+  h4: withLine("h4"),
+  h5: withLine("h5"),
+  h6: withLine("h6"),
+  p: withLine("p"),
+  blockquote: withLine("blockquote"),
+  li: withLine("li"),
+  hr({ node }) {
+    return <hr data-line={lineOf(node)} />;
+  },
+  pre({ node, children }) {
     const child = React.Children.toArray(children)[0];
     const props = (React.isValidElement(child) ? child.props : {}) as { className?: string; children?: React.ReactNode };
     const lang = /language-([\w+#-]+)/.exec(props.className ?? "")?.[1]?.toLowerCase();
     const code = nodeText(props.children).replace(/\n$/, "");
-    if (lang === "mermaid") return <MermaidBlock code={code} />;
-    return <CodeBlock code={code} lang={lang} />;
-  },
-  li({ node, children, className, ...props }) {
-    return (
-      <li {...props} className={className} data-line={(node as WithNode["node"])?.position?.start.line}>
-        {children}
-      </li>
-    );
+    if (lang === "mermaid") return <MermaidBlock code={code} line={lineOf(node)} />;
+    return <CodeBlock code={code} lang={lang} line={lineOf(node)} />;
   },
   input({ node, type, checked, ...props }) {
     if (type !== "checkbox") return <input type={type} {...props} />;
@@ -212,7 +215,7 @@ const components: Components = {
   },
   table({ node, ...props }) {
     return (
-      <div className="qn-table-wrap">
+      <div className="qn-table-wrap" data-line={lineOf(node)}>
         <table {...props} />
       </div>
     );

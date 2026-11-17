@@ -10,12 +10,14 @@ export type NoteTab = {
 
 export type ViewMode = "write" | "split" | "read";
 export type ThemeMode = "light" | "sepia" | "lightgray" | "dark" | "deepdark";
-export type FontSizeMode = "normal" | "large" | "xlarge";
+export type FontSizeMode = "small" | "normal" | "large" | "xlarge";
+export type ReadingFont = "sans" | "serif";
 
 export type Prefs = {
   view: ViewMode;
   theme: ThemeMode;
   fontSize: FontSizeMode;
+  readingFont: ReadingFont;
   showToc: boolean;
 };
 
