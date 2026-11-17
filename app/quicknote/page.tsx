@@ -1,4 +1,4 @@
-import { Container, TextareaQuicknote } from "@/components";
+import { TextareaQuicknote } from "@/components";
 import JsonLd from "@/components/seo/JsonLd";
 import { Metadata } from 'next';
 
@@ -71,10 +71,10 @@ const page = () => {
   return (
     <>
       <JsonLd data={noteSchema} />
-      <div className="h-16"></div>
-      <Container width="max-w-6xl" className="p-3">
+      <h1 className="sr-only">Quick Note: online notepad and Markdown editor</h1>
+      <div className="h-[100dvh] p-2 lg:p-3">
         <TextareaQuicknote />
-      </Container>
+      </div>
     </>
   );
 };
