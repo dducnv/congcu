@@ -2,7 +2,7 @@
 
 A fast, privacy‑friendly toolbox that runs in your browser. Generate secure secrets, hash text, convert colors, view CSV files, extract text from images, take quick notes, run a Pomodoro timer, and more — without sign‑ups or servers.
 
-Live site: [tools4u.vercel.app](https://tools4u.vercel.app/)
+Live site: [tools4u.vercel.app](https://tools.dducnv.dev/)
 
 - Blazing‑fast and simple UI
 - Processes locally in your browser (client‑side)
@@ -40,7 +40,7 @@ Keywords: online secret key generator, SHA‑256 online, HMAC SHA‑256, random 
 ## Featured Tools
 
 ### Generate Secret Key
-Open: [tools4u.vercel.app/dev-tools/generate-secret-key](https://tools4u.vercel.app/dev-tools/generate-secret-key)
+Open: [tools4u.vercel.app/dev-tools/generate-secret-key](https://tools.dducnv.dev/dev-tools/generate-secret-key)
 
 Secure, developer‑friendly key generation for .env files, webhooks, tokens, and HMAC/JWT use cases.
 
@@ -67,7 +67,7 @@ Use cases: NEXTAUTH_SECRET, JWT HS256 secrets (oct), internal API secrets, CSRF 
 ---
 
 ### Extract Text from Image (OCR)
-Open: [tools4u.vercel.app/image-to-text](https://tools4u.vercel.app/image-to-text)
+Open: [tools4u.vercel.app/image-to-text](https://tools.dducnv.dev/image-to-text)
 
 - Drag & drop images (JPG/PNG)
 - Recognize text directly in the browser (tesseract.js)
@@ -76,7 +76,7 @@ Open: [tools4u.vercel.app/image-to-text](https://tools4u.vercel.app/image-to-tex
 ---
 
 ### CSV Viewer
-Open: [tools4u.vercel.app/dev-tools/csv-viewer](https://tools4u.vercel.app/dev-tools/csv-viewer)
+Open: [tools4u.vercel.app/dev-tools/csv-viewer](https://tools.dducnv.dev/dev-tools/csv-viewer)
 
 - Load and explore CSV files
 - Table view, basic stats, quick charts
@@ -85,7 +85,7 @@ Open: [tools4u.vercel.app/dev-tools/csv-viewer](https://tools4u.vercel.app/dev-t
 ---
 
 ### Color Converter
-Open: [tools4u.vercel.app/dev-tools/color-converter](https://tools4u.vercel.app/dev-tools/color-converter)
+Open: [tools4u.vercel.app/dev-tools/color-converter](https://tools.dducnv.dev/dev-tools/color-converter)
 
 - Convert HEX ↔ RGB ↔ HSL
 - Built‑in color picker
@@ -94,7 +94,7 @@ Open: [tools4u.vercel.app/dev-tools/color-converter](https://tools4u.vercel.app/
 ---
 
 ### Color Picker from Image
-Open: [tools4u.vercel.app/color-picker-from-image](https://tools4u.vercel.app/color-picker-from-image)
+Open: [tools4u.vercel.app/color-picker-from-image](https://tools.dducnv.dev/color-picker-from-image)
 
 - Pick colors directly from an image
 - Get HEX/RGB values for design and front‑end work
@@ -102,7 +102,7 @@ Open: [tools4u.vercel.app/color-picker-from-image](https://tools4u.vercel.app/co
 ---
 
 ### Quick Image Editor
-Open: [tools4u.vercel.app/quick-image-editor](https://tools4u.vercel.app/quick-image-editor)
+Open: [tools4u.vercel.app/quick-image-editor](https://tools.dducnv.dev/quick-image-editor)
 
 - Lightweight in‑browser editor
 - Crop, rotate, draw, add text/stickers, filters, and more
@@ -110,7 +110,7 @@ Open: [tools4u.vercel.app/quick-image-editor](https://tools4u.vercel.app/quick-i
 ---
 
 ### Quick Note
-Open: [tools4u.vercel.app/quicknote](https://tools4u.vercel.app/quicknote)
+Open: [tools4u.vercel.app/quicknote](https://tools.dducnv.dev/quicknote)
 
 - Fast, distraction‑free notes
 - Perfect for jotting down ideas and to‑dos
@@ -118,7 +118,7 @@ Open: [tools4u.vercel.app/quicknote](https://tools4u.vercel.app/quicknote)
 ---
 
 ### Emoji
-Open: [tools4u.vercel.app/emoji](https://tools4u.vercel.app/emoji)
+Open: [tools4u.vercel.app/emoji](https://tools.dducnv.dev/emoji)
 
 - Search and copy emoji quickly
 - Handy for posts, chats, and notes
@@ -126,7 +126,7 @@ Open: [tools4u.vercel.app/emoji](https://tools4u.vercel.app/emoji)
 ---
 
 ### Calculate Percentage
-Open: [tools4u.vercel.app/percentity](https://tools4u.vercel.app/percentity)
+Open: [tools4u.vercel.app/percentity](https://tools.dducnv.dev/percentity)
 
 - Percentage, increase/decrease, reverse calculations
 - Shows formulas for clarity
@@ -134,7 +134,7 @@ Open: [tools4u.vercel.app/percentity](https://tools4u.vercel.app/percentity)
 ---
 
 ### Draw
-Open: [tools4u.vercel.app/draw](https://tools4u.vercel.app/draw)
+Open: [tools4u.vercel.app/draw](https://tools.dducnv.dev/draw)
 
 - Freehand drawing on the screen
 - Ideal for sketching ideas or annotating
@@ -142,7 +142,7 @@ Open: [tools4u.vercel.app/draw](https://tools4u.vercel.app/draw)
 ---
 
 ### Pomodoro
-Open: [tools4u.vercel.app/pomodoro](https://tools4u.vercel.app/pomodoro)
+Open: [tools4u.vercel.app/pomodoro](https://tools.dducnv.dev/pomodoro)
 
 - Pomodoro timer with simple task management
 - Stay focused and keep a steady work rhythm
@@ -150,7 +150,7 @@ Open: [tools4u.vercel.app/pomodoro](https://tools4u.vercel.app/pomodoro)
 ---
 
 ### Read JSON
-Open: [tools4u.vercel.app/dev-tools/read-json](https://tools4u.vercel.app/dev-tools/read-json)
+Open: [tools4u.vercel.app/dev-tools/read-json](https://tools.dducnv.dev/dev-tools/read-json)
 
 - View and navigate JSON data
 - Handy for developers when inspecting API responses and configuration files

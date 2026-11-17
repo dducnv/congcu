@@ -1,5 +1,5 @@
 export const SITE = {
-  url: "https://tools4u.vercel.app",
+  url: "https://tools.dducnv.dev",
   name: "MultiTools",
   locale: "en_US",
   /** Default description for pages that do not set their own. */

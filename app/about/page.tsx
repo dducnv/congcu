@@ -11,13 +11,13 @@ const aboutSchema = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
   "name": "About MultiTools",
-  "url": "https://tools4u.vercel.app/about",
+  "url": "https://tools.dducnv.dev/about",
   "description":
     "MultiTools provides fast, open-source, client-side web utilities for developers, designers, and everyday users.",
   "publisher": {
     "@type": "Organization",
     "name": "MultiTools",
-    "url": "https://tools4u.vercel.app",
+    "url": "https://tools.dducnv.dev",
   },
 };
 
