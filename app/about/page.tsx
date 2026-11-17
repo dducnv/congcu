@@ -47,7 +47,9 @@ const page = () => {
                 <strong>No Registration or Signups:</strong> Instant access to every tool without intrusive accounts or subscription walls.
               </li>
               <li>
-                <strong>Zero Tracking:</strong> No tracking cookies, no surveillance, no data harvesting.
+                <strong>Basic Analytics Only:</strong> We use Google Analytics and Vercel Analytics to count page views and see
+                which tools are popular. Google Analytics sets cookies for this. The text, files and results you work with in
+                our tools are never sent to analytics or to any server.
               </li>
             </ul>
           </section>
