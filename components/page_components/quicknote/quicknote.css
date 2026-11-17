@@ -92,15 +92,18 @@
 .qn-root.is-note .qn-pane,
 .qn-root.is-note .qn-editor-wrap { flex: none; display: block; }
 .qn-root.is-note .qn-panes[data-view] .qn-editor-wrap { max-width: none; margin: 0; border-right: 0; }
+/* Same type as the original notepad (Tailwind `font-mono text-sm p-3`). */
 .qn-root.is-note .qn-textarea {
   display: block;
   width: 100%;
   height: 420px;
   min-height: 200px;
-  padding: 12px 14px;
+  padding: 12px;
   resize: vertical;
-  font-size: 14px;
-  line-height: 1.7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-variant-ligatures: normal;
 }
 
 .qn-root.is-fullscreen {

@@ -87,10 +87,10 @@ const tools: SidebarModel = {
 
 const developerToolsItems: SidebarItem[] = [
   {
-    name: "Read Json",
+    name: "JSON Formatter",
     href: "/dev-tools/read-json",
     icon: "",
-    desc: "",
+    desc: "Format, validate, fix and compare JSON.",
   },
   {
     name: "CSV & SQL Viewer",
@@ -102,7 +102,7 @@ const developerToolsItems: SidebarItem[] = [
     name: "Generate secret key",
     href: "/dev-tools/generate-secret-key",
     icon: "",
-    desc: "",
+    desc: "Secure random keys, SHA-256 hashes and HMAC signatures.",
   },
   {
     name: "Base64 Encode/Decode",

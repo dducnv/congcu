@@ -1,23 +1,11 @@
-import { TitlePage, Container } from "@/components";
+import { Container } from "@/components/container";
+import { TitlePage } from "@/components/title_page";
 import JsonLd from "@/components/seo/JsonLd";
-import { Metadata } from "next";
+import { buildMetadata } from "@/core/seo/metadata";
 import Link from "next/link";
 import React from "react";
 
-export const metadata: Metadata = {
-  title: "About MultiTools - Privacy-First In-Browser Developer Utilities",
-  description:
-    "Learn about MultiTools: our mission to provide fast, 100% private, client-side developer and productivity utilities with zero data collection and zero server uploads.",
-  alternates: {
-    canonical: "https://tools4u.vercel.app/about",
-  },
-  openGraph: {
-    title: "About MultiTools - Privacy-First In-Browser Utilities",
-    description: "Fast, 100% private, client-side developer and productivity utilities.",
-    url: "https://tools4u.vercel.app/about",
-    siteName: "MultiTools",
-  },
-};
+export const metadata = buildMetadata("/about");
 
 const aboutSchema = {
   "@context": "https://schema.org",

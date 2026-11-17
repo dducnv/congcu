@@ -7,12 +7,12 @@ import React, { useEffect, useRef, useState } from 'react'
 
 
 const blockInfo = [
-  { icon: '🎯', tooltip: 'Nhập phần trăm và giá trị, kết quả sẽ tự động hiển thị.', formula: 'Kết quả = Giá trị × Phần trăm / 100' },
-  { icon: '📊', tooltip: 'Nhập hai số, kết quả là tỷ lệ phần trăm số 1 trên số 2.', formula: 'Kết quả = Số 1 / Số 2 × 100' },
-  { icon: '📈', tooltip: 'Nhập giá trị cũ và mới, kết quả là phần trăm thay đổi.', formula: 'Kết quả = (Giá trị mới - Giá trị cũ) / Giá trị cũ × 100' },
-  { icon: '🔄', tooltip: 'Nhập tỷ lệ phần trăm và giá trị, chọn tăng hoặc giảm.', formula: 'Tăng: Giá trị × (1 + %/100), Giảm: Giá trị × (1 - %/100)' },
-  { icon: '❓', tooltip: 'Nhập X và Y%, kết quả là số Z sao cho X là Y% của Z.', formula: 'Z = X / (Y / 100)' },
-  { icon: '🧮', tooltip: 'Nhập kết quả và phần trăm, tính ra giá trị gốc.', formula: 'Giá trị gốc = Kết quả / (% / 100)' },
+  { icon: '🎯', tooltip: 'Enter a percentage and a value; the result appears automatically.', formula: 'Result = Value × Percent / 100' },
+  { icon: '📊', tooltip: 'Enter two numbers; the result is number 1 as a percentage of number 2.', formula: 'Result = Number 1 / Number 2 × 100' },
+  { icon: '📈', tooltip: 'Enter the old and new values; the result is the percentage change.', formula: 'Result = (New value - Old value) / Old value × 100' },
+  { icon: '🔄', tooltip: 'Enter a percentage and a value, then choose increase or decrease.', formula: 'Increase: Value × (1 + %/100), Decrease: Value × (1 - %/100)' },
+  { icon: '❓', tooltip: 'Enter X and Y%; the result is the number Z such that X is Y% of Z.', formula: 'Z = X / (Y / 100)' },
+  { icon: '🧮', tooltip: 'Enter the result and the percentage to find the original value.', formula: 'Original value = Result / (% / 100)' },
 ]
 
 const BlockTitle = ({ children, icon, tooltip, formula, onShowFormula }: { children: React.ReactNode, icon: string, tooltip: string, formula: string, onShowFormula: () => void }) => (
@@ -37,7 +37,7 @@ const ResultBlock = ({ value, onCopy }: { value: string | null, onCopy: () => vo
 )
 
 const ClearButton = ({ onClick }: { onClick: () => void }) => (
-  <button onClick={onClick} className="ml-2 text-gray-500 hover:text-red-600 text-lg" title="Xóa"><span role="img" aria-label="clear">🗑️</span></button>
+  <button onClick={onClick} className="ml-2 text-gray-500 hover:text-red-600 text-lg" title="Clear"><span role="img" aria-label="clear">🗑️</span></button>
 )
 
 
@@ -45,7 +45,7 @@ const FormulaPopup = ({ formula, onClose }: { formula: string, onClose: () => vo
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
     <div className="bg-white rounded-lg shadow-lg p-6 min-w-[250px] max-w-xs text-center relative">
       <button onClick={onClose} className="absolute top-2 right-2 text-gray-400 hover:text-black">✕</button>
-      <div className="text-base font-semibold mb-2">Công thức</div>
+      <div className="text-base font-semibold mb-2">Formula</div>
       <div className="text-sm text-gray-700 whitespace-pre-line">{formula}</div>
     </div>
   </div>
@@ -53,7 +53,7 @@ const FormulaPopup = ({ formula, onClose }: { formula: string, onClose: () => vo
 
 const DecimalSelect = ({ value, onChange }: { value: number, onChange: (v: number) => void }) => (
   <select value={value} onChange={e => onChange(Number(e.target.value))} className="border border-gray-400 rounded px-2 py-1 ml-2 text-sm">
-    {[0, 1, 2, 3, 4].map(n => <option key={n} value={n}>{n} số thập phân</option>)}
+    {[0, 1, 2, 3, 4].map(n => <option key={n} value={n}>{n} decimals</option>)}
   </select>
 )
 
@@ -126,7 +126,7 @@ export const PercentBlocks = () => {
   // Block 4
   const [percent4, setPercent4] = useState('')
   const [value4, setValue4] = useState('')
-  const [mode4, setMode4] = useState<'tăng' | 'giảm'>('tăng')
+  const [mode4, setMode4] = useState<'increase' | 'decrease'>('increase')
   const [result4, setResult4] = useState<string | null>(null)
   const { copied: copied4, copy: copy4 } = useCopy()
   const ref4a = useRef<HTMLInputElement>(null)
@@ -135,7 +135,7 @@ export const PercentBlocks = () => {
     const p = parseFloat(percent4)
     const v = parseFloat(value4)
     if (!isNaN(p) && !isNaN(v)) {
-      const res = mode4 === 'tăng' ? v * (1 + p / 100) : v * (1 - p / 100)
+      const res = mode4 === 'increase' ? v * (1 + p / 100) : v * (1 - p / 100)
       setResult4(res.toFixed(decimal))
     } else setResult4('?')
   }, [percent4, value4, mode4, decimal])
@@ -180,126 +180,126 @@ export const PercentBlocks = () => {
   // Tab bar (mobile)
   const tabBlocks = [
     {
-      label: 'Phần trăm của giá trị',
+      label: 'Percent of value',
       block: (
         <Container width="w-full" className="p-5 mb-2 border border-black bg-gradient-to-br from-white to-blue-50">
           <BlockTitle icon={blockInfo[0].icon} tooltip={blockInfo[0].tooltip} formula={blockInfo[0].formula} onShowFormula={() => setShowFormula({ idx: 0, open: true })}>
-            Tính phần trăm của một giá trị
+            Calculate a percentage of a value
           </BlockTitle>
           <div className="flex flex-wrap items-end gap-4">
-            <InputBlock ref={ref1a} label="Phần trăm (%)" type="number" value={percent1} onChange={e => setPercent1(e.target.value)} placeholder="%" min="0" max="100" onKeyDown={handleEnter(clear1)} />
-            <span className="mb-4">% của</span>
-            <InputBlock ref={ref1b} label="Giá trị" type="number" value={value1} onChange={e => setValue1(e.target.value)} placeholder="Giá trị" onKeyDown={handleEnter(clear1)} />
+            <InputBlock ref={ref1a} label="Percent (%)" type="number" value={percent1} onChange={e => setPercent1(e.target.value)} placeholder="%" min="0" max="100" onKeyDown={handleEnter(clear1)} />
+            <span className="mb-4">% of</span>
+            <InputBlock ref={ref1b} label="Value" type="number" value={value1} onChange={e => setValue1(e.target.value)} placeholder="Value" onKeyDown={handleEnter(clear1)} />
             <span className="mb-4">=</span>
             <ResultBlock value={result1} onCopy={() => copy1(result1 ?? '')} />
             <ClearButton onClick={clear1} />
-            {copied1 && <span className="text-green-600 text-xs ml-1">Đã copy!</span>}
+            {copied1 && <span className="text-green-600 text-xs ml-1">Copied!</span>}
           </div>
         </Container>
       )
     },
     {
-      label: 'Tỷ lệ phần trăm',
+      label: 'Percentage',
       block: (
         <Container width="w-full" className="p-5 mb-2 border border-black bg-gradient-to-br from-white to-green-50">
           <BlockTitle icon={blockInfo[1].icon} tooltip={blockInfo[1].tooltip} formula={blockInfo[1].formula} onShowFormula={() => setShowFormula({ idx: 1, open: true })}>
-            Tính tỷ lệ phần trăm một số là của số khác
+            What percent is one number of another
           </BlockTitle>
           <div className="flex flex-wrap items-end gap-4">
-            <InputBlock ref={ref2a} label="Số 1" type="number" value={x2} onChange={e => setX2(e.target.value)} placeholder="Số 1" onKeyDown={handleEnter(clear2)} />
-            <span className="mb-4">là bao nhiêu % của</span>
-            <InputBlock ref={ref2b} label="Số 2" type="number" value={y2} onChange={e => setY2(e.target.value)} placeholder="Số 2" onKeyDown={handleEnter(clear2)} />
+            <InputBlock ref={ref2a} label="Number 1" type="number" value={x2} onChange={e => setX2(e.target.value)} placeholder="Number 1" onKeyDown={handleEnter(clear2)} />
+            <span className="mb-4">is what % of</span>
+            <InputBlock ref={ref2b} label="Number 2" type="number" value={y2} onChange={e => setY2(e.target.value)} placeholder="Number 2" onKeyDown={handleEnter(clear2)} />
             <span className="mb-4">=</span>
             <ResultBlock value={result2} onCopy={() => copy2(result2 ?? '')} />
             <span className="mb-4">%</span>
             <ClearButton onClick={clear2} />
-            {copied2 && <span className="text-green-600 text-xs ml-1">Đã copy!</span>}
+            {copied2 && <span className="text-green-600 text-xs ml-1">Copied!</span>}
           </div>
         </Container>
       )
     },
     {
-      label: 'Tăng/Giảm',
+      label: 'Percent change',
       block: (
         <Container width="w-full" className="p-5 mb-2 border border-black bg-gradient-to-br from-white to-pink-50">
           <BlockTitle icon={blockInfo[2].icon} tooltip={blockInfo[2].tooltip} formula={blockInfo[2].formula} onShowFormula={() => setShowFormula({ idx: 2, open: true })}>
-            Tính phần trăm của giá trị thay đổi
+            Calculate the percentage change
           </BlockTitle>
           <div className="flex flex-wrap items-end gap-4">
-            <span className="mb-4">Tỷ lệ tăng / giảm</span>
-            <InputBlock ref={ref3a} label="Giá trị mới" type="number" value={new3} onChange={e => setNew3(e.target.value)} placeholder="Giá trị mới" onKeyDown={handleEnter(clear3)} />
+            <span className="mb-4">Change rate</span>
+            <InputBlock ref={ref3a} label="New value" type="number" value={new3} onChange={e => setNew3(e.target.value)} placeholder="New value" onKeyDown={handleEnter(clear3)} />
             <span className="mb-4">-</span>
-            <InputBlock ref={ref3b} label="Giá trị cũ" type="number" value={old3} onChange={e => setOld3(e.target.value)} placeholder="Giá trị cũ" onKeyDown={handleEnter(clear3)} />
+            <InputBlock ref={ref3b} label="Old value" type="number" value={old3} onChange={e => setOld3(e.target.value)} placeholder="Old value" onKeyDown={handleEnter(clear3)} />
             <span className="mb-4">=</span>
             <ResultBlock value={result3} onCopy={() => copy3(result3 ?? '')} />
             <span className="mb-4">%</span>
             <ClearButton onClick={clear3} />
-            {copied3 && <span className="text-green-600 text-xs ml-1">Đã copy!</span>}
+            {copied3 && <span className="text-green-600 text-xs ml-1">Copied!</span>}
           </div>
         </Container>
       )
     },
     {
-      label: 'Tăng/Giảm cụ thể',
+      label: 'Increase/Decrease',
       block: (
         <Container width="w-full" className="p-5 mb-2 border border-black bg-gradient-to-br from-white to-yellow-50">
           <BlockTitle icon={blockInfo[3].icon} tooltip={blockInfo[3].tooltip} formula={blockInfo[3].formula} onShowFormula={() => setShowFormula({ idx: 3, open: true })}>
-            Tăng hoặc giảm một tỷ lệ cụ thể
+            Increase or decrease by a percentage
           </BlockTitle>
           <div className="flex flex-wrap items-end gap-4">
-            <InputBlock ref={ref4a} label="Tỷ lệ (%)" type="number" value={percent4} onChange={e => setPercent4(e.target.value)} placeholder="%" onKeyDown={handleEnter(clear4)} />
+            <InputBlock ref={ref4a} label="Rate (%)" type="number" value={percent4} onChange={e => setPercent4(e.target.value)} placeholder="%" onKeyDown={handleEnter(clear4)} />
             <div className="flex flex-col items-start min-w-[90px]">
-              <label className="text-xs text-gray-600 mb-1 pl-1">Chọn</label>
-              <select value={mode4} onChange={e => setMode4(e.target.value as 'tăng' | 'giảm')} className="border px-3 py-2 border-gray-800 rounded text-base">
-                <option value="tăng">tăng</option>
-                <option value="giảm">giảm</option>
+              <label className="text-xs text-gray-600 mb-1 pl-1">Choose</label>
+              <select value={mode4} onChange={e => setMode4(e.target.value as 'increase' | 'decrease')} className="border px-3 py-2 border-gray-800 rounded text-base">
+                <option value="increase">increase</option>
+                <option value="decrease">decrease</option>
               </select>
             </div>
-            <span className="mb-4">của</span>
-            <InputBlock ref={ref4b} label="Giá trị" type="number" value={value4} onChange={e => setValue4(e.target.value)} placeholder="Giá trị" onKeyDown={handleEnter(clear4)} />
+            <span className="mb-4">of</span>
+            <InputBlock ref={ref4b} label="Value" type="number" value={value4} onChange={e => setValue4(e.target.value)} placeholder="Value" onKeyDown={handleEnter(clear4)} />
             <span className="mb-4">=</span>
             <ResultBlock value={result4} onCopy={() => copy4(result4 ?? '')} />
             <ClearButton onClick={clear4} />
-            {copied4 && <span className="text-green-600 text-xs ml-1">Đã copy!</span>}
+            {copied4 && <span className="text-green-600 text-xs ml-1">Copied!</span>}
           </div>
         </Container>
       )
     },
     {
-      label: 'X là Y% của Z',
+      label: 'X is Y% of Z',
       block: (
         <Container width="w-full" className="p-5 mb-2 border border-black bg-gradient-to-br from-white to-indigo-50">
           <BlockTitle icon={blockInfo[4].icon} tooltip={blockInfo[4].tooltip} formula={blockInfo[4].formula} onShowFormula={() => setShowFormula({ idx: 4, open: true })}>
-            Số X là Y% của số Z. Z là?
+            X is Y% of Z. What is Z?
           </BlockTitle>
           <div className="flex flex-wrap items-end gap-4">
-            <span className="mb-4">Số</span>
+            <span className="mb-4">Number</span>
             <InputBlock ref={ref5a} label="X" type="number" value={x5} onChange={e => setX5(e.target.value)} placeholder="X" onKeyDown={handleEnter(clear5)} />
-            <span className="mb-4">là</span>
+            <span className="mb-4">is</span>
             <InputBlock ref={ref5b} label="Y%" type="number" value={percent5} onChange={e => setPercent5(e.target.value)} placeholder="%" onKeyDown={handleEnter(clear5)} />
-            <span className="mb-4">% của số</span>
+            <span className="mb-4">% of number</span>
             <ResultBlock value={result5} onCopy={() => copy5(result5 ?? '')} />
             <ClearButton onClick={clear5} />
-            {copied5 && <span className="text-green-600 text-xs ml-1">Đã copy!</span>}
+            {copied5 && <span className="text-green-600 text-xs ml-1">Copied!</span>}
           </div>
         </Container>
       )
     },
     {
-      label: 'Tính ngược',
+      label: 'Reverse',
       block: (
         <Container width="w-full" className="p-5 mb-2 border border-black bg-gradient-to-br from-white to-gray-100">
           <BlockTitle icon={blockInfo[5].icon} tooltip={blockInfo[5].tooltip} formula={blockInfo[5].formula} onShowFormula={() => setShowFormula({ idx: 5, open: true })}>
-            Tính toán ngược: Biết kết quả và %, tìm giá trị gốc
+            Reverse calculation: find the original value from the result and %
           </BlockTitle>
           <div className="flex flex-wrap items-end gap-4">
-            <InputBlock ref={ref6a} label="Kết quả" type="number" value={result6} onChange={e => setResult6(e.target.value)} placeholder="Kết quả" onKeyDown={handleEnter(clear6)} />
-            <span className="mb-4">là</span>
+            <InputBlock ref={ref6a} label="Result" type="number" value={result6} onChange={e => setResult6(e.target.value)} placeholder="Result" onKeyDown={handleEnter(clear6)} />
+            <span className="mb-4">is</span>
             <InputBlock ref={ref6b} label="%" type="number" value={percent6} onChange={e => setPercent6(e.target.value)} placeholder="%" onKeyDown={handleEnter(clear6)} />
-            <span className="mb-4">của số</span>
+            <span className="mb-4">of number</span>
             <ResultBlock value={origin6} onCopy={() => copy6(origin6 ?? '')} />
             <ClearButton onClick={clear6} />
-            {copied6 && <span className="text-green-600 text-xs ml-1">Đã copy!</span>}
+            {copied6 && <span className="text-green-600 text-xs ml-1">Copied!</span>}
           </div>
         </Container>
       )
@@ -310,7 +310,7 @@ export const PercentBlocks = () => {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div className="flex flex-wrap gap-2">
-          <span className="text-sm text-gray-700">Làm tròn:</span>
+          <span className="text-sm text-gray-700">Round to:</span>
           <DecimalSelect value={decimal} onChange={setDecimal} />
         </div>
         <div className="block md:hidden">

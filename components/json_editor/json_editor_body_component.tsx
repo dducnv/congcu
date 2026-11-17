@@ -158,7 +158,7 @@ const JsonViewerPage = () => {
         const obj = JSON.parse(fixed);
         return JSON.stringify(obj, null, 2);
       } catch (e2) {
-        return `// Không thể sửa JSON tự động. \n\n${fixed}`;
+        return `// Could not fix the JSON automatically. \n\n${fixed}`;
       }
     }
   }, []);
@@ -221,8 +221,8 @@ const JsonViewerPage = () => {
 
     searchRecursive(json);
     return results.length > 0
-      ? `Tìm thấy ${results.length} kết quả:\n\n${results.join('\n')}`
-      : 'Không tìm thấy kết quả nào.';
+      ? `Found ${results.length} result(s):\n\n${results.join('\n')}`
+      : 'No results found.';
   }, []);
 
   const compareObjects = React.useCallback((obj1: any, obj2: any): any => {
@@ -282,7 +282,7 @@ const JsonViewerPage = () => {
       setError('');
     };
     reader.onerror = () => {
-      setError('Lỗi đọc file!');
+      setError('Could not read the file.');
     };
     reader.readAsText(file);
   }, []);
@@ -294,7 +294,7 @@ const JsonViewerPage = () => {
       if (file && file.type === 'application/json') {
         handleFileUpload(file);
       } else {
-        setError('Vui lòng chọn file JSON!');
+        setError('Please choose a JSON file.');
       }
     },
     accept: {
@@ -320,7 +320,7 @@ const JsonViewerPage = () => {
     } else if (viewMode === 'format') {
       const isValid = validateJson(leftInput);
       if (!isValid) {
-        setError('JSON không hợp lệ!');
+        setError('Invalid JSON!');
         setRightInput('');
         return;
       }
@@ -329,10 +329,10 @@ const JsonViewerPage = () => {
     } else if (viewMode === 'validate') {
       const isValid = validateJson(leftInput);
       if (isValid) {
-        setRightInput('✅ JSON hợp lệ!');
+        setRightInput('✅ Valid JSON!');
         setError('');
       } else {
-        setError('❌ JSON không hợp lệ!');
+        setError('❌ Invalid JSON!');
         setRightInput('');
       }
     } else if (viewMode === 'search' && searchTerm.trim()) {
@@ -342,7 +342,7 @@ const JsonViewerPage = () => {
         setSearchResults(results);
         setRightInput(results);
       } catch (e) {
-        setError('JSON không hợp lệ!');
+        setError('Invalid JSON!');
         setRightInput('');
       }
     }
@@ -448,11 +448,11 @@ const JsonViewerPage = () => {
           {/* Search Input */}
           {viewMode === 'search' && (
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Tìm kiếm:</label>
+              <label className="text-sm font-medium">Search:</label>
               <input
                 type="text"
                 className="border border-gray-300 px-3 py-1 text-sm rounded"
-                placeholder="Nhập từ khóa..."
+                placeholder="Enter a keyword..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -578,7 +578,7 @@ const JsonViewerPage = () => {
             <JsonViewWrapper
               value={leftInput}
               onChange={setLeftInput}
-              placeholder="Dán hoặc nhập JSON tại đây..."
+              placeholder="Paste or type JSON here..."
             />
           </div>
         </div>
@@ -613,12 +613,12 @@ const JsonViewerPage = () => {
               <JsonViewWrapper
                 value={diffInput}
                 onChange={setDiffInput}
-                placeholder="Nhập JSON thứ 2 để so sánh..."
+                placeholder="Enter a second JSON to compare..."
               />
             ) : viewMode === 'search' ? (
               <div className="border border-black p-4 bg-gray-50 min-h-[400px]">
                 <pre className="whitespace-pre-wrap font-mono text-sm">
-                  {rightInput || 'Kết quả tìm kiếm sẽ hiển thị ở đây...'}
+                  {rightInput || 'Search results will appear here...'}
                 </pre>
               </div>
             ) : viewMode === 'validate' ? (
@@ -628,7 +628,7 @@ const JsonViewerPage = () => {
                     {validateJson(leftInput) ? '✅' : '❌'}
                   </div>
                   <div className="text-lg font-semibold">
-                    {validateJson(leftInput) ? 'JSON hợp lệ!' : 'JSON không hợp lệ!'}
+                    {validateJson(leftInput) ? 'Valid JSON!' : 'Invalid JSON!'}
                   </div>
                 </div>
               </div>
@@ -636,7 +636,7 @@ const JsonViewerPage = () => {
               <JsonViewWrapper
                 value={rightInput}
                 onChange={setRightInput}
-                placeholder="Kết quả sẽ hiển thị ở đây..."
+                placeholder="Output will appear here..."
               />
             )}
           </div>
@@ -668,7 +668,7 @@ const JsonViewerPage = () => {
               <JsonViewWrapper
                 value={rightInput}
                 onChange={setRightInput}
-                placeholder="Kết quả so sánh sẽ hiển thị ở đây..."
+                placeholder="Comparison result will appear here..."
                 readOnly={true}
               />
             </div>

@@ -9,6 +9,11 @@ const nextConfig = {
     REDIS_SECRET: process.env.REDIS_SECRET,
     NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
   },
+  // Old color pages were merged into /color-tools; send a permanent (308) redirect.
+  redirects: async () => [
+    { source: '/color-picker-from-image', destination: '/color-tools', permanent: true },
+    { source: '/dev-tools/color-converter', destination: '/color-tools', permanent: true },
+  ],
   headers: async () => [
     {
       source: '/(.*)',

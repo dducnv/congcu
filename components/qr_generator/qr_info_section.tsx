@@ -127,7 +127,7 @@ export default function QrInfoSection() {
             Secret Key & Hash Generator
           </Link>
           <Link
-            href="/dev-tools/color-converter"
+            href="/color-tools"
             className="border border-black px-3 py-1 hover:bg-black hover:text-white transition-colors"
           >
             Color Code Converter

@@ -50,11 +50,11 @@ function calcEntropyBits(length: number, alphabetSize: number) {
   return length * (Math.log(alphabetSize) / Math.log(2));
 }
 function entropyLabel(bits: number) {
-  if (bits >= 128) return 'rất mạnh';
-  if (bits >= 100) return 'mạnh';
-  if (bits >= 80) return 'khá';
-  if (bits >= 64) return 'trung bình';
-  return 'yếu';
+  if (bits >= 128) return 'very strong';
+  if (bits >= 100) return 'strong';
+  if (bits >= 80) return 'fair';
+  if (bits >= 64) return 'medium';
+  return 'weak';
 }
 
 // Rejection sampling để tránh modulo bias khi map byte -> index
@@ -142,13 +142,13 @@ const GenerateSecretKeyPage = () => {
   function generateCustomRandom(): string {
     // Kiểm tra ràng buộc
     if (computedAlphabet.length === 0) {
-      throw new Error('Vui lòng chọn ít nhất một nhóm ký tự hoặc nhập ký tự tùy chỉnh.');
+      throw new Error('Please select at least one character group or enter custom characters.');
     }
     if (len <= 0) {
-      throw new Error('Độ dài phải lớn hơn 0.');
+      throw new Error('Length must be greater than 0.');
     }
     if (requireEachGroup && selectedGroups.length > len) {
-      throw new Error(`Độ dài quá ngắn. Cần ít nhất ${selectedGroups.length} để chứa mỗi nhóm một ký tự.`);
+      throw new Error(`Length is too short. It must be at least ${selectedGroups.length} to include one character from each group.`);
     }
 
     // Đảm bảo ít nhất 1 ký tự từ mỗi nhóm đã chọn (không tính custom chars như một nhóm bắt buộc)
@@ -196,7 +196,7 @@ const GenerateSecretKeyPage = () => {
         setResult(md5(realInput).toString());
       } else if (type === 'hmac-sha256') {
         if (!secret) {
-          setError('Vui lòng nhập secret cho HMAC!');
+          setError('Please enter a secret for HMAC.');
           return;
         }
         setResult(hmacSHA256(realInput, secret).toString());
@@ -215,7 +215,7 @@ const GenerateSecretKeyPage = () => {
         setResult(out);
       }
     } catch (e: any) {
-      setError(e?.message || 'Có lỗi xảy ra!');
+      setError(e?.message || 'Something went wrong.');
     }
   }
 
@@ -228,10 +228,10 @@ const GenerateSecretKeyPage = () => {
 
   return (
     <div className='max-w-xl mx-auto p-6 text-mono'>
-      <h1 className='text-2xl font-bold mb-4'>Tạo khoá bảo mật</h1>
+      <h1 className='text-2xl font-bold mb-4'>Secret Key Generator</h1>
 
       <div className='mb-4'>
-        <label className='block mb-1 font-semibold'>Chọn loại khoá</label>
+        <label className='block mb-1 font-semibold'>Key type</label>
         <select
           className='border border-black px-3 py-2 w-full'
           value={type}
@@ -245,13 +245,13 @@ const GenerateSecretKeyPage = () => {
 
       {(type.startsWith('sha-') || type === 'md5' || type === 'hmac-sha256') ? (
         <div className='mb-4'>
-          <label className='block mb-1 font-semibold'>Chuỗi nguồn</label>
+          <label className='block mb-1 font-semibold'>Source string</label>
           <div className='flex gap-2'>
             <input
               className='border border-black px-3 py-2 w-full'
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder='Nhập chuỗi nguồn...'
+              placeholder='Enter source string...'
             />
             <button
               type='button'
@@ -275,14 +275,14 @@ const GenerateSecretKeyPage = () => {
             className='border border-black px-3 py-2 w-full'
             value={secret}
             onChange={e => setSecret(e.target.value)}
-            placeholder='Nhập secret...'
+            placeholder='Enter secret...'
           />
         </div>
       )}
 
       {(type === 'random-base64' || type === 'random-hex') && (
         <div className='mb-4'>
-          <label className='block mb-1 font-semibold'>Độ dài (bytes)</label>
+          <label className='block mb-1 font-semibold'>Length (bytes)</label>
           <div className='flex items-center gap-3'>
             <input
               className='border border-black px-3 py-2 w-24'
@@ -293,7 +293,7 @@ const GenerateSecretKeyPage = () => {
               onChange={e => setByteLen(Number(e.target.value))}
             />
             <span className='text-xs text-gray-600'>
-              Giá trị mặc định: 32 bytes
+              Default: 32 bytes
             </span>
           </div>
         </div>
@@ -302,7 +302,7 @@ const GenerateSecretKeyPage = () => {
       {type === 'random-custom' && (
         <div className='mb-4 space-y-4'>
           <div>
-            <label className='block mb-1 font-semibold'>Độ dài</label>
+            <label className='block mb-1 font-semibold'>Length</label>
             <div className='flex items-center gap-3'>
               <input
                 type='range'
@@ -324,41 +324,41 @@ const GenerateSecretKeyPage = () => {
           </div>
 
           <div>
-            <label className='block mb-1 font-semibold'>Nhóm ký tự</label>
+            <label className='block mb-1 font-semibold'>Character groups</label>
             <div className='grid grid-cols-2 gap-2'>
               <label className='flex items-center gap-2'>
                 <input type='checkbox' checked={useLower} onChange={e => setUseLower(e.target.checked)} />
-                <span>chữ thường (a-z)</span>
+                <span>lowercase (a-z)</span>
               </label>
               <label className='flex items-center gap-2'>
                 <input type='checkbox' checked={useUpper} onChange={e => setUseUpper(e.target.checked)} />
-                <span>chữ hoa (A-Z)</span>
+                <span>uppercase (A-Z)</span>
               </label>
               <label className='flex items-center gap-2'>
                 <input type='checkbox' checked={useDigits} onChange={e => setUseDigits(e.target.checked)} />
-                <span>số (0-9)</span>
+                <span>digits (0-9)</span>
               </label>
               <label className='flex items-center gap-2'>
                 <input type='checkbox' checked={useSymbols} onChange={e => setUseSymbols(e.target.checked)} />
-                <span>ký tự đặc biệt</span>
+                <span>symbols</span>
               </label>
             </div>
           </div>
 
           <div>
-            <label className='block mb-1 font-semibold'>Ký tự tùy chỉnh (tuỳ chọn)</label>
+            <label className='block mb-1 font-semibold'>Custom characters (optional)</label>
             <input
               className='border border-black px-3 py-2 w-full'
               value={customChars}
               onChange={e => setCustomChars(e.target.value)}
-              placeholder='Nhập thêm ký tự muốn cho phép...'
+              placeholder='Add extra characters to allow...'
             />
           </div>
 
           <div className='grid grid-cols-1 gap-2'>
             <label className='flex items-center gap-2'>
               <input type='checkbox' checked={excludeAmb} onChange={e => setExcludeAmb(e.target.checked)} />
-              <span>Loại trừ ký tự dễ nhầm lẫn (0/O, 1/l/I, S/5, B/8, G/6, Z/2, ...)</span>
+              <span>Exclude look-alike characters (0/O, 1/l/I, S/5, B/8, G/6, Z/2, ...)</span>
             </label>
             <label className='flex items-center gap-2'>
               <input
@@ -366,15 +366,15 @@ const GenerateSecretKeyPage = () => {
                 checked={requireEachGroup}
                 onChange={e => setRequireEachGroup(e.target.checked)}
               />
-              <span>Bắt buộc chứa ít nhất một ký tự từ mỗi nhóm đã chọn</span>
+              <span>Require at least one character from each selected group</span>
             </label>
           </div>
 
           <div className='text-xs text-gray-600'>
-            <div>Bảng chữ: {computedAlphabet.length} ký tự</div>
+            <div>Alphabet: {computedAlphabet.length} characters</div>
             <div>
-              Entropy ước tính: {entropyBits.toFixed(1)} bits ({entropyLabel(entropyBits)}).
-              Khuyến nghị ≥ 80 bits cho secret quan trọng, ≥ 128 bits cho khoá dài hạn.
+              Estimated entropy: {entropyBits.toFixed(1)} bits ({entropyLabel(entropyBits)}).
+              Recommended: ≥ 80 bits for important secrets, ≥ 128 bits for long-term keys.
             </div>
           </div>
         </div>
@@ -385,14 +385,14 @@ const GenerateSecretKeyPage = () => {
         onClick={handleGenerate}
         disabled={(type === 'hmac-sha256' && !secret)}
       >
-        Tạo khoá
+        Generate key
       </button>
 
       {error && <div className='text-red-500 mb-2'>{error}</div>}
 
       {result && (
         <div className='mb-2'>
-          <label className='block mb-1 font-semibold'>Kết quả</label>
+          <label className='block mb-1 font-semibold'>Result</label>
           <div className='flex items-center gap-2'>
             <input
               className='border border-black px-3 py-2 w-full font-mono text-xs'
@@ -403,15 +403,15 @@ const GenerateSecretKeyPage = () => {
               className='px-2 py-1 border border-black bg-white hover:bg-gray-200 text-xs'
               onClick={handleCopy}
             >
-              {copied ? 'Đã copy!' : 'Copy'}
+              {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
         </div>
       )}
 
       <div className='mt-6 text-xs text-gray-500 space-y-1'>
-        <div>Hỗ trợ: SHA-256, SHA-512, MD5, HMAC-SHA256, random key (Base64, Hex), Random (Custom) với độ dài và tập ký tự tuỳ chỉnh.</div>
-        <div>Random (Base64/Hex) cho phép chọn số byte. Random (Custom) sử dụng Web Crypto và rejection sampling để tránh bias.</div>
+        <div>Supports: SHA-256, SHA-512, MD5, HMAC-SHA256, random keys (Base64, Hex), and Random (Custom) with a custom length and character set.</div>
+        <div>Random (Base64/Hex) lets you choose the number of bytes. Random (Custom) uses Web Crypto and rejection sampling to avoid bias.</div>
       </div>
     </div>
   );

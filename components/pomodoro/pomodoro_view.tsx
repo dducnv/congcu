@@ -439,7 +439,7 @@ export default function PomodoroPage() {
                 </button>
               </div>
               <div className="text-sm text-gray-600">
-                Hôm nay: <span className="font-semibold">{stats.completedFocus}</span> Pomodoro
+                Today: <span className="font-semibold">{stats.completedFocus}</span> Pomodoros
               </div>
             </div>
 
@@ -500,7 +500,7 @@ export default function PomodoroPage() {
 
               <div className="mt-6 grid grid-cols-3 gap-4 w-full max-w-md">
                 <div className="col-span-2">
-                  <label className="text-sm text-gray-600">Focus (phút)</label>
+                  <label className="text-sm text-gray-600">Focus (min)</label>
                   <input
                     type="number"
                     min={1}
@@ -532,7 +532,7 @@ export default function PomodoroPage() {
                       setSettings((s) => ({ ...s, soundEnabled: e.target.checked }))
                     }
                   />
-                  Âm báo khi kết thúc
+                  Sound when a session ends
                 </label>
               </div>
             </div>
@@ -553,7 +553,7 @@ export default function PomodoroPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") addTask();
                 }}
-                placeholder="Thêm nhiệm vụ mới..."
+                placeholder="Add a new task..."
                 className="flex-1 border border-black rounded-xl px-3 py-2 outline-none"
               />
               <button
@@ -601,7 +601,7 @@ export default function PomodoroPage() {
                         className={`text-left flex-1 ${t.done ? "line-through text-gray-400" : ""
                           }`}
                         onClick={() => beginEditTask(t)}
-                        title="Click để sửa"
+                        title="Click to edit"
                       >
                         {t.title}
                       </button>
@@ -610,7 +610,7 @@ export default function PomodoroPage() {
                     <button
                       onClick={() => deleteTask(t.id)}
                       className="opacity-70 hover:opacity-100 text-sm w-6 h-6 border border-black rounded-full"
-                      title="Xoá"
+                      title="Delete"
                     >
                       ×
                     </button>
@@ -618,7 +618,7 @@ export default function PomodoroPage() {
                 </div>
               ))}
               {tasks.length === 0 && (
-                <div className="text-sm text-gray-500">Chưa có task nào. Hãy thêm một task để bắt đầu tập trung.</div>
+                <div className="text-sm text-gray-500">No tasks yet. Add a task to start focusing.</div>
               )}
             </div>
           </div>

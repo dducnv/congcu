@@ -25,6 +25,15 @@ export const ImageEditorComponent = () => {
         document.body.removeChild(link);
       };
     }
+
+    // The editor library renders decorative <img> tags without alt text; mark them decorative.
+    const markDecorative = () =>
+      document.querySelectorAll<HTMLImageElement>(".tui-image-editor-container img:not([alt])").forEach((img) => img.setAttribute("alt", ""));
+    markDecorative();
+    const observer = new MutationObserver(markDecorative);
+    const root = document.querySelector(".tui-image-editor-container");
+    if (root) observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, []);
 
   return (

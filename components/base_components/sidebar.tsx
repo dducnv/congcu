@@ -18,10 +18,12 @@ export const Siderbar = () => {
           href={"/"}
           className="text-3xl text-mono font-semibold text-gray-800"
         >
-          {!isCollapsed && <h1>7TH.DEC</h1>}
+          {!isCollapsed && <span>7TH.DEC</span>}
         </Link>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!isCollapsed}
           className="p-2 hover:bg-gray-100 rounded transition-colors"
         >
           {isCollapsed ? '→' : '←'}
@@ -52,7 +54,7 @@ export const Siderbar = () => {
             <div key={index}>
               {!isCollapsed && (
                 <Link href={"/"}>
-                  <h2 className="text-lg font-medium">{item.title}</h2>
+                  <span className="block text-lg font-medium">{item.title}</span>
                 </Link>
               )}
               {item.items.map((itemlink, index) => (
@@ -68,7 +70,7 @@ export const Siderbar = () => {
                   )}
                   title={isCollapsed ? itemlink.name : undefined}
                 >
-                  {!isCollapsed && <h2>{itemlink.name}</h2>}
+                  {!isCollapsed && <span>{itemlink.name}</span>}
                 </Link>
               ))}
               {!isCollapsed && <hr className="my-3 border-gray-200" />}
@@ -80,13 +82,13 @@ export const Siderbar = () => {
       </div>
       {!isCollapsed && (
         <div>
-          <h4>
+          <p>
             Made by{" "}
             <a href="https://dducnv.github.io" className="underline">
               Nguyen Van Duc
             </a>{" "}
             with all my heart ❤️
-          </h4>
+          </p>
         </div>
       )}
     </aside>

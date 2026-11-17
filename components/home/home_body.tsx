@@ -2,7 +2,7 @@
 
 import { sidebarData } from "@/core/data_local/sidebar_data";
 import Link from "next/link";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 export default function HomeBody() {
   const [search, setSearch] = useState("");
@@ -12,8 +12,18 @@ export default function HomeBody() {
   return (
     <main>
       <div className=" max-w-6xl m-auto">
-        <div className="flex justify-center mt-20 lg:pt-6">
+        <div className="mt-16 px-4 text-center lg:pt-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-mono tracking-tight">
+            Free online tools that run in your browser
+          </h1>
+          <p className="mt-3 text-gray-700 max-w-2xl mx-auto">
+            JSON formatter, SQL &amp; CSV viewer, QR code generator, OCR, regex tester, notes and more. No signup, and your
+            files never leave your device.
+          </p>
+        </div>
+        <div className="flex justify-center mt-10">
           <input
+            aria-label="Search tools"
             onChange={(value) => handleSearch(value.target.value)}
             className="border text-mono border-black w-full py-5 text-3xl px-6 max-w-4xl m-auto outline-none rounded-full shadow-blog-l"
             placeholder="Enter keyword to search..."
@@ -26,12 +36,12 @@ export default function HomeBody() {
             );
 
             return (
-              <>
+              <Fragment key={item.title}>
                 {filterItems.length > 0 && (
                   <>
-                    <h1 className="px-3 mt-10 border-l-4 border-black text-3xl text-mono font-bold">
+                    <h2 className="px-3 mt-10 border-l-4 border-black text-3xl text-mono font-bold">
                       {item.title}
-                    </h1>
+                    </h2>
                     <div className=" grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-6 gap-8">
                       {filterItems.map((itemInItem, index) => (
                         <Link
@@ -48,7 +58,7 @@ export default function HomeBody() {
                     </div>
                   </>
                 )}
-              </>
+              </Fragment>
             );
           })}
         </div>
